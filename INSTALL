@@ -1,0 +1,21 @@
+Installation
+============
+
+You can install ``redish`` either via the Python Package Index (PyPI)
+or from source.
+
+To install using ``pip``,::
+
+    $ pip install redish
+
+
+To install using ``easy_install``,::
+
+    $ easy_install redish
+
+
+If you have downloaded a source tarball you can install it
+by doing the following,::
+
+    $ python setup.py build
+    # python setup.py install # as root
