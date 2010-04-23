@@ -50,7 +50,7 @@ class Client(object):
         value = self.api.get(key)
         if value is None:
             raise KeyError(key)
-        return value
+        return self.value_to_python(value)
 
     def __setitem__(self, key, value):
         return self.api.set(key, self.prepare_value(value))
