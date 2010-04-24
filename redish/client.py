@@ -23,14 +23,17 @@ class Client(object):
         self.db = db or self.db
         self.api = _RedisClient(self.host, self.port, self.db)
 
-    def List(self, name):
-        return types.List(name=name, client=self.api)
+    def List(self, name, initial=None):
+        return types.List(name, self.api, initial=initial)
 
     def SortedSet(self, name):
-        return types.SortedSet(name=name, client=self.api)
+        return types.SortedSet(name, self.api)
 
     def Set(self, name):
-        return types.Set(name=name, client=self.api)
+        return types.Set(name, self.api)
+
+    def Hash(self, name, initial=None, **extra)
+        return types.Hash(name, self.api, initial=initial, **extra)
 
     def prepare_value(self, value):
         return self.serializer.serialize(value)
