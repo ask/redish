@@ -15,6 +15,42 @@ class Type(object):
         self.client = client
 
 
+class List(Type):
+
+    def __getitem__(self, index):
+        return self.client.lindex(self.name, index)
+
+    def __setitem__(self, index, value):
+        return self.client.lset(self.name, index, value)
+
+    def __len__(self):
+        return self.client.llen(self.name)
+
+    def __getslice__(self, i, j):
+        return self.client.lrange(self.name, i, j)
+
+    def append(self, value):
+        return self.client.rpush(self.name, value)
+
+    def appendleft(self, value):
+        return self.client.lpush(self.name, value)
+
+    def trim(self, start, stop):
+        return self.client.ltrim(self.name, start, stop)
+
+    def pop(self):
+        return self.client.rpop(self.name)
+
+    def popleft(self):
+        return self.client.lpop(self.name)
+
+    def remove(self, value, count=1):
+        count = self.client.lrem(self.name, value, num=count)
+        if not count:
+            raise ValueError("%s not in list" % value)
+        return count
+
+
 class Set(Type):
 
     def __iter__(self):

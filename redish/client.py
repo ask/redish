@@ -23,6 +23,9 @@ class Client(object):
         self.db = db or self.db
         self.api = _RedisClient(self.host, self.port, self.db)
 
+    def List(self, name):
+        return types.List(name=name, client=self.api)
+
     def SortedSet(self, name):
         return types.SortedSet(name=name, client=self.api)
 
