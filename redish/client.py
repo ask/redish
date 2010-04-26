@@ -88,3 +88,15 @@ class Client(object):
 
     def update(self, mapping):
         return self.api.mset(mapping)
+
+    def rename(self, old_name, new_name):
+        return self.api.rename(key(old_name), key(new_name))
+
+    def pop(self, name):
+        name = key(name)
+        temp = key((name, "__poptmp__"))
+        if self.rename(name, temp):
+            value = self[temp]
+            del(self[temp])
+            return value
+        raise KeyError(name)
