@@ -34,7 +34,7 @@ class Client(object):
         return types.Set(name, self.api)
 
     def Dict(self, name, initial=None, **extra):
-        return types.Hash(name, self.api, initial=initial, **extra)
+        return types.Dict(name, self.api, initial=initial, **extra)
 
     def prepare_value(self, value):
         return self.serializer.serialize(value)

@@ -139,10 +139,10 @@ class SortedSet(Type):
             raise KeyError(member)
 
 
-class Hash(Type):
+class Dict(Type):
 
     def __init__(self, name, client, initial=None, **extra):
-        super(Hash, self).__init__(name, client)
+        super(Dict, self).__init__(name, client)
         initial = dict(initial or {}, **extra)
         if initial:
             self.update(initial)
