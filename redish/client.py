@@ -1,7 +1,3 @@
-import time
-import uuid
-from datetime import datetime
-
 from redis import Redis as _RedisClient
 
 from redish import types
@@ -25,6 +21,9 @@ class Client(object):
         self.serializer = serializer or self.serializer
         self.db = db or self.db
         self.api = _RedisClient(self.host, self.port, self.db)
+
+    def id(self, name):
+        return types.Id(name, self.api)
 
     def List(self, name, initial=None):
         """The list datatype.
@@ -99,21 +98,6 @@ class Client(object):
         """Decode value to a Python object."""
         return self.serializer.deserialize(value)
 
-    def create_id(self):
-        """Create a globally unique id."""
-        return str(uuid.uuid4())
-
-    def dt_to_timestamp(self, dt):
-        """Convert :class:`datetime` to UNIX timestamp."""
-        return time.mktime(dt.timetuple())
-
-    def maybe_datetime(self, timestamp):
-        """Convert datetime to timestamp, only if timestamp
-        is a datetime object."""
-        if isinstance(timestamp, datetime):
-            return self.dt_to_timestamp(timestamp)
-        return timestamp
-
     def clear(self):
         """Remove all keys from the current database."""
         return self.api.flushdb()
@@ -176,6 +160,14 @@ class Client(object):
             raise KeyError(name)
         return self.value_to_python(value)
 
+    def get(self, key, default=None):
+        """Returns the value at ``key`` if present, otherwise returns
+        ``default`` (``None`` by default.)"""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
     def __setitem__(self, name, value):
         """``x.__setitem(name, value) <==> x[name] = value``"""
         return self.api.set(key(name), self.prepare_value(value))
@@ -198,4 +190,4 @@ class Client(object):
         """``x.__repr__() <==> repr(x)``"""
         return "<RedisClient: %s:%s/%s>" % (self.host,
                                            self.port,
-                                           self.db)
+                                           self.db or "")

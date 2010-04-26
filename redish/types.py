@@ -9,6 +9,9 @@ class Type(object):
         self.name = key(name)
         self.client = client
 
+def Id(name, client):
+    return "%s:%s" % (name, client.incr("ids:%s" % (name, )), )
+
 
 class List(Type):
     """A list."""
