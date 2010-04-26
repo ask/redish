@@ -1,17 +1,10 @@
-import operator
-
-
-def maybe_list(value):
-    # FIXME
-    if not operator.isSequenceType(value):
-        return [value]
-    return value
+from redish.utils import maybe_list, key
 
 
 class Type(object):
 
     def __init__(self, name, client):
-        self.name = name
+        self.name = key(name)
         self.client = client
 
 

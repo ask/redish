@@ -5,6 +5,7 @@ from datetime import datetime
 from redis import Redis as _RedisClient
 
 from redish import types
+from redish.utils import key
 from redish.serialization import Pickler
 
 DEFAULT_PORT = 6379
@@ -32,7 +33,7 @@ class Client(object):
     def Set(self, name):
         return types.Set(name, self.api)
 
-    def Hash(self, name, initial=None, **extra)
+    def Dict(self, name, initial=None, **extra):
         return types.Hash(name, self.api, initial=initial, **extra)
 
     def prepare_value(self, value):
@@ -52,15 +53,17 @@ class Client(object):
             return self.dt_to_timestamp(timestamp)
         return timestamp
 
-    def __getitem__(self, key):
-        value = self.api.get(key)
+    def __getitem__(self, name):
+        name = key(name)
+        value = self.api.get(name)
         if value is None:
-            raise KeyError(key)
+            raise KeyError(name)
         return self.value_to_python(value)
 
-    def __setitem__(self, key, value):
-        return self.api.set(key, self.prepare_value(value))
+    def __setitem__(self, name, value):
+        return self.api.set(key(name), self.prepare_value(value))
 
-    def __delitem__(self, key):
-        if not self.api.delete(key):
-            raise KeyError(key)
+    def __delitem__(self, name):
+        name = key(name)
+        if not self.api.delete(name):
+            raise KeyError(name)
