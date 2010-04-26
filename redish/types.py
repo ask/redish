@@ -1,3 +1,5 @@
+from Queue import Empty, Full
+
 from redish.utils import maybe_list, key
 
 
@@ -6,6 +8,32 @@ class Type(object):
     def __init__(self, name, client):
         self.name = key(name)
         self.client = client
+
+
+class Counter(Type):
+
+    def __init__(self, name, client, initial=None):
+        super(Counter, self).__init__(name, client)
+        if initial is not None:
+            self.client.set(self.name, int(initial))
+
+    def __iadd__(self, other):
+        if other == 1:
+            self.client.incr(self.name)
+        else:
+            self.client.incrby(self.name, other)
+
+    def __isub__(self, other):
+        if other == 1:
+            self.client.decr(self.name)
+        else:
+            self.client.decrby(self.name, other)
+
+    def __int__(self):
+        return int(self.client.get(self.name))
+
+    def __repr__(self):
+        return repr(int(self))
 
 
 class List(Type):
@@ -236,3 +264,50 @@ class Dict(Type):
 
     def copy(self):
         return self._as_dict()
+
+
+class Queue(Type):
+
+    def __init__(self, name, client, initial=None, maxsize=0):
+        super(Queue, self).__init__(name, client)
+        self.list = List(name, client, initial)
+        self.maxsize = maxsize
+        self._pop = self.list.pop
+        self._bpop = self.client.brpop
+        self._append = self.list.appendleft
+
+    def empty(self):
+        return not len(self.list)
+
+    def full(self):
+        return self.maxsize and len(self.list) > self.maxsize
+
+    def get(self, block=True, timeout=None):
+        if not block:
+            return self.get_nowait()
+        item = self._bpop(self.name, timeout=timeout)
+        if item is not None:
+            return item
+        raise Empty
+
+    def get_nowait(self):
+        item = self._pop()
+        if item is not None:
+            return item
+        raise Empty()
+
+    def put(self, item):
+        if self.full():
+            raise Full()
+        self._append(item)
+
+    def qsize(self):
+        return len(self.list)
+
+
+class LIFOQueue(Queue):
+
+    def __init__(self, name, client, initial=None, maxsize=0):
+        super(LIFOQueue, self).__init__(name, client, initial, maxsize)
+        self._pop = self.list.popleft
+        self._bpop = self.client.blpop

@@ -36,6 +36,15 @@ class Client(object):
     def Dict(self, name, initial=None, **extra):
         return types.Dict(name, self.api, initial=initial, **extra)
 
+    def Counter(self, name, initial=None):
+        return types.Counter(name, self.api, initial=initial)
+
+    def Queue(self, name, initial=None):
+        return types.Queue(name, self.api, initial=initial)
+
+    def LIFOQueue(self, name, initial=None):
+        return types.LIFOQueue(name, self.api, initial=initial)
+
     def prepare_value(self, value):
         return self.serializer.serialize(value)
 
@@ -67,3 +76,15 @@ class Client(object):
         name = key(name)
         if not self.api.delete(name):
             raise KeyError(name)
+
+    def __len__(self):
+        return self.api.dbsize()
+
+    def __contains__(self, name):
+        return self.api.exists(key(name))
+
+    def clear(self):
+        return self.api.flushdb()
+
+    def update(self, mapping):
+        return self.api.mset(mapping)
