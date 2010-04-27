@@ -16,29 +16,23 @@ class ModelType(type):
 class Model(dict):
     id = None
     name = None
-    client = None
+    objects = None
     __metaclass__ = ModelType
 
-    def __init__(self, client, id=None, **fields):
-        self.client = client
+    def __init__(self, manager, id=None, **fields):
+        self.objects = manager
         self.id = id
-        if not self.name:
-            name = self.__class__.__name__
         dict.__init__(self, self.prepare_fields(fields))
 
-    def create(self, **data):
-        entry = self.Entry(**data)
-        return entry.save()
-
     def save(self):
-        id = self.id or self.client.id(self.name)
-        self.client[id] = self.prepare_save(dict(self))
+        id = self.id or self.objects.id(self.name)
+        self.objects[id] = self.prepare_save(dict(self))
         self.id = id
         self.post_save()
         return id
 
     def delete(self):
-        del(self.client[self.id])
+        del(self.objects[self.id])
         self.post_delete()
 
     def prepare_save(self, fields):
@@ -98,10 +92,13 @@ class Manager(Client):
 
     def __iter__(self):
         pattern = ":*" % self.model.name
-        return (self.Entry(id, **fields)
+        return (self.instance(id, **fields)
                         for id, fields in self.iteritems(pattern))
 
     def all(self):
         return list(iter(self))
 
-
+    def create(self, **data):
+        entry = self.instance(**data)
+        entry.save()
+        return entry
