@@ -94,6 +94,11 @@ class List(Type):
 class Set(Type):
     """A set."""
 
+    def __init__(self, name, client, initial=None):
+        super(Set, self).__init__(name, client)
+        if initial:
+            self.update(initial)
+
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
         return iter(self._as_set())
@@ -149,10 +154,12 @@ class Set(Type):
         """
         return self.client.sunion(other.name for other in maybe_list(others))
 
-    def update(self, others):
+    def update(self, other):
         """Update this set with the union of itself and others."""
-        return self.client.sunionstore(other.name
-                                        for other in maybe_list(others))
+        if isinstance(other, self.__class__):
+            return self.client.sunionstore(self.name, other.name)
+        else:
+            return map(self.add, other)
 
     def intersection(self, others):
         """Return the intersection of two sets as a new set.
@@ -182,7 +189,22 @@ class Set(Type):
 
 
 class SortedSet(Type):
-    """A sorted set."""
+    """A sorted set.
+
+    :keyword initial: Initial data to populate the set with,
+      must be an iterable of ``(element, score)`` tuples.
+
+    """
+
+    def __init__(self, name, client, initial=None):
+        super(SortedSet, self).__init__(name, client)
+        if initial:
+            self.update(initial)
+
+    def update(self, iterable):
+        for member, score in iterable:
+            self.add(member, score)
+
 
     def __getslice__(self, i, j):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
@@ -424,8 +446,9 @@ class Queue(Type):
         return len(self.list)
 
 
-class LIFOQueue(Queue):
-    """LIFO Queue."""
+class LifoQueue(Queue):
+    """Variant of :class:`Queue` that retrieves most recently added
+    entries first."""
 
     def __init__(self, name, client, initial=None, maxsize=0):
         super(LIFOQueue, self).__init__(name, client, initial, maxsize)
