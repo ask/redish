@@ -7,9 +7,10 @@ redish - Pythonic Redis abstraction built on top of redis-py
 Introduction
 ============
 
-By mixing the original redish's type system with the original redis-py's Redis
-object, give a different sort of transparent access to the key-value store
-without pickling/unpickling.
+By mixing Åsk's type system from redish with the original redis-py's Redis
+object, this fork gives a different sort of transparent access to the
+key-value store without pickling/unpickling, and by respecting the strengths
+in Redis's types.
 
 Braindump::
 

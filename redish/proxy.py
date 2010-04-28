@@ -37,7 +37,7 @@ class Proxy(Redis):
         if isinstance(value, int):
             self.set(key, value)
             return
-        elif isinstance(value, basestring)):
+        elif isinstance(value, basestring):
             self.set(key, encode(value, "UTF-8"))
             return
         pline = self.pipeline()
@@ -52,3 +52,4 @@ class Proxy(Redis):
         elif isinstance(value, dict):
             pline = pline.hmset(key, value)
         pline.execute()
+    
