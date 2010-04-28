@@ -6,8 +6,9 @@ proxy.py
 Created by Adam T. Lindsay on 2010-04-28.
 
 """
+from codecs import encode, decode
 from redis import Redis
-from redish import types, client
+from redish import types
 
 TYPE_MAP = {
     "list":   types.List,
@@ -20,7 +21,7 @@ def int_or_str(thing):
     try:
         return int(thing)
     except (TypeError, ValueError):
-        return thing
+        return decode(thing, "UTF-8")
 
 class Proxy(Redis):
     def __getitem__(self, key):
@@ -33,8 +34,11 @@ class Proxy(Redis):
             return TYPE_MAP[typ](key, self)
     
     def __setitem__(self, key, value):
-        if isinstance(value, (int, basestring)):
+        if isinstance(value, int):
             self.set(key, value)
+            return
+        elif isinstance(value, basestring)):
+            self.set(key, encode(value, "UTF-8"))
             return
         pline = self.pipeline()
         if self.exists(key):
