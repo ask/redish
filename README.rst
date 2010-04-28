@@ -2,17 +2,35 @@
 redish - Pythonic Redis abstraction built on top of redis-py
 ============================================================================
 
-:Version: 0.0.1
+:Version: 0.0.1.1
 
 Introduction
 ============
 
+By mixing the original redish's type system with the original redis-py's Redis
+object, give a different sort of transparent access to the key-value store
+without pickling/unpickling.
+
 Braindump::
 
-    >>> from redish.client import Client
-    >>> x = Client()
+    >>> from redish.proxy import Proxy
+    >>> x = Proxy()
 
     # Key/Value
+    >>> x["foo"] = "bar"
+    >>> x["foo"]
+    'bar'
+    >>> del(x["foo"])
+    >>> x["foo"]
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "redish/proxy.py", line 29, in __getitem__
+        raise KeyError(key)
+    KeyError: 'foo'
+
+
+
+    >>> 
     >>> x["foo"] = {"name": "George"}
     >>> x["foo"]
     {'name': 'George'}
@@ -58,19 +76,6 @@ Braindump::
 
 Installation
 ============
-
-You can install ``redish`` either via the Python Package Index (PyPI)
-or from source.
-
-To install using ``pip``,::
-
-    $ pip install redish
-
-
-To install using ``easy_install``,::
-
-    $ easy_install redish
-
 
 If you have downloaded a source tarball you can install it
 by doing the following,::

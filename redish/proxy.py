@@ -26,7 +26,7 @@ class Proxy(Redis):
     def __getitem__(self, key):
         typ = self.type(key)
         if typ == 'none':
-            raise KeyError
+            raise KeyError(key)
         elif typ == 'string':
             return int_or_str(self.get(key))
         else:
