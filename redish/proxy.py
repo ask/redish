@@ -33,15 +33,18 @@ class Proxy(Redis):
             return TYPE_MAP[typ](key, self)
     
     def __setitem__(self, key, value):
-        if isinstance(value, (int, basestring):
-            
+        if isinstance(value, (int, basestring)):
+            self.set(key, value)
+            return
+        pline = self.pipeline()
         if self.exists(key):
-            self.delete(key)
+            pline = pline.delete(key)
         if isinstance(value, list):
             for item in value:
-                self.lpush(key, item)
+                pline = pline.rpush(key, item)
         elif isinstance(value, set):
             for item in value:
-                self.sadd(key, item)
+                pline = pline.sadd(key, item)
         elif isinstance(value, dict):
-            self.hmset(key, value)
+            pline = pline.hmset(key, value)
+        pline.execute()
