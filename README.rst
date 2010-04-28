@@ -9,7 +9,7 @@ Introduction
 
 By mixing Åsk's type system from redish with the original redis-py's Redis
 object, this fork gives a different sort of transparent access to the
-key-value store without pickling/unpickling, and by respecting the strengths
+key-value store without pickling/unpickling and by respecting the strengths
 in Redis's types.
 
 Braindump::
@@ -42,7 +42,22 @@ Braindump::
     >>> x["dictionary"].__class__
     <class 'redish.types.Dict'>
     
-    # Sets
+    # List
+
+    >>> x["Liszt"] = ['w', 'x', 'y', 'z']
+    >>> x["Liszt"]
+    ['w', 'x', 'y', 'z']
+    >>> x["Liszt"].extend(["a", "b", "c"])
+    >>> x["Liszt"]
+    ['w', 'x', 'y', 'z', 'a', 'b', 'c']
+    >>> x["Liszt"][-1]
+    'c'
+    >>> x["Liszt"].pop()
+    'c'
+    >>> x["Liszt"][-1]
+    'b'
+    
+    # Set
 
     >>> x["set"] = set(["opera", "firefox", "ie", "safari"])
     >>> s = x["set"]
@@ -53,8 +68,18 @@ Braindump::
     False
     >>> list(s)
     ['opera', 'ie', 'firefox']
-
-
+    
+    # Caution! Assignment copies
+    
+    >>> x["game"] = x["set"]
+    >>> x["game"].add("mobilesafari")
+    True
+    >>> x["game"]
+    set(['opera', 'ie', 'firefox', 'mobilesafari'])
+    >>> x["set"]
+    set(['opera', 'ie', 'firefox'])
+    
+        
 Installation
 ============
 

@@ -43,13 +43,13 @@ class Proxy(Redis):
         pline = self.pipeline()
         if self.exists(key):
             pline = pline.delete(key)
-        if isinstance(value, list):
+        if isinstance(value, (list, types.List)):
             for item in value:
                 pline = pline.rpush(key, item)
-        elif isinstance(value, set):
+        elif isinstance(value, (set, types.Set)):
             for item in value:
                 pline = pline.sadd(key, item)
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, types.Dict)):
             pline = pline.hmset(key, value)
         pline.execute()
     
