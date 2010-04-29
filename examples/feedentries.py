@@ -52,4 +52,3 @@ if __name__ == "__main__":
 
     for post in iter(posts):
         print("(%s) %s" % (post.id, post.title))
-

@@ -1,7 +1,7 @@
 from redis import Redis as _RedisClient
 
 from redish import types
-from redish.utils import key
+from redish.utils import mkey
 from redish.serialization import Pickler
 
 DEFAULT_PORT = 6379
@@ -113,7 +113,7 @@ class Client(object):
 
     def rename(self, old_name, new_name):
         """Rename key to a new name."""
-        return self.api.rename(key(old_name), key(new_name))
+        return self.api.rename(mkey(old_name), mkey(new_name))
 
     def keys(self, pattern="*"):
         """Get a list of all the keys in the database, or
@@ -149,8 +149,8 @@ class Client(object):
 
     def pop(self, name):
         """Get and remove key from database (atomic)."""
-        name = key(name)
-        temp = key((name, "__poptmp__"))
+        name = mkey(name)
+        temp = mkey((name, "__poptmp__"))
         if self.rename(name, temp):
             value = self[temp]
             del(self[temp])
@@ -159,7 +159,7 @@ class Client(object):
 
     def __getitem__(self, name):
         """``x.__getitem__(name) <==> x[name]``"""
-        name = key(name)
+        name = mkey(name)
         value = self.api.get(name)
         if value is None:
             raise KeyError(name)
@@ -175,11 +175,11 @@ class Client(object):
 
     def __setitem__(self, name, value):
         """``x.__setitem(name, value) <==> x[name] = value``"""
-        return self.api.set(key(name), self.prepare_value(value))
+        return self.api.set(mkey(name), self.prepare_value(value))
 
     def __delitem__(self, name):
         """``x.__delitem__(name) <==> del(x[name])``"""
-        name = key(name)
+        name = mkey(name)
         if not self.api.delete(name):
             raise KeyError(name)
 
@@ -189,7 +189,7 @@ class Client(object):
 
     def __contains__(self, name):
         """``x.__contains__(name) <==> name in x``"""
-        return self.api.exists(key(name))
+        return self.api.exists(mkey(name))
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""

@@ -2,13 +2,13 @@ from Queue import Empty, Full
 
 from redis.exceptions import ResponseError
 
-from redish.utils import maybe_list, key
+from redish.utils import mkey
 
 
 class Type(object):
 
     def __init__(self, name, client):
-        self.name = key(name)
+        self.name = mkey(name)
         self.client = client
 
 
@@ -464,7 +464,7 @@ class LifoQueue(Queue):
     entries first."""
 
     def __init__(self, name, client, initial=None, maxsize=0):
-        super(LIFOQueue, self).__init__(name, client, initial, maxsize)
+        super(LifoQueue, self).__init__(name, client, initial, maxsize)
         self._pop = self.list.popleft
         self._bpop = self.client.blpop
 

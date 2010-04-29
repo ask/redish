@@ -1,5 +1,4 @@
 import time
-import operator
 from datetime import datetime
 
 
@@ -11,7 +10,7 @@ def maybe_list(value):
     return [value]
 
 
-def key(names):
+def mkey(names):
     return ":".join(maybe_list(names))
 
 
