@@ -34,21 +34,25 @@ class Client(object):
         """
         return types.List(name, self.api, initial=initial)
 
-    def SortedSet(self, name):
-        """The sorted set datatype.
-
-        :param name: The name of the sorted set.
-
-        """
-        return types.SortedSet(name, self.api)
-
-    def Set(self, name):
+    def Set(self, name, initial=None):
         """The set datatype.
 
         :param name: The name of the set.
+        :keyword initial: Initial members of the set.
 
         """
-        return types.Set(name, self.api)
+        return types.Set(name, self.api, initial)
+
+
+    def SortedSet(self, name, initial=None):
+        """The sorted set datatype.
+
+        :param name: The name of the sorted set.
+        :param initial: Initial members of the set as an iterable
+           of ``(element, score)`` tuples.
+
+        """
+        return types.SortedSet(name, self.api, initial)
 
     def Dict(self, name, initial=None, **extra):
         """The dictionary datatype (Hash).
@@ -104,7 +108,8 @@ class Client(object):
 
     def update(self, mapping):
         """Update database with the key/values from a :class:`dict`."""
-        return self.api.mset(mapping)
+        return self.api.mset(dict((key, self.prepare_value(value))
+                                for key, value in mapping.items()))
 
     def rename(self, old_name, new_name):
         """Rename key to a new name."""
