@@ -315,12 +315,6 @@ class Dict(Type):
         """``x.__repr__() <==> repr(x)``"""
         return repr(self._as_dict())
 
-    def __cmp__(self, other):
-        """``x.__cmp__(other) <==> cmp(x, other)``"""
-        if isinstance(other, self.__class__):
-            other = other._as_dict()
-        return cmp(self._as_dict(), other)
-
     def keys(self):
         """Returns the list of keys present in this dictionary."""
         return self.client.hkeys(self.name)
@@ -471,29 +465,3 @@ class LifoQueue(Queue):
         super(LifoQueue, self).__init__(name, client, initial, maxsize)
         self._pop = self.list.popleft
         self._bpop = self.client.blpop
-
-
-class Counter(Type):
-
-    def __init__(self, name, client, initial=None):
-        super(Counter, self).__init__(name, client)
-        if initial is not None:
-            self.client.set(self.name, int(initial))
-
-    def __iadd__(self, other):
-        if other == 1:
-            self.client.incr(self.name)
-        else:
-            self.client.incrby(self.name, other)
-
-    def __isub__(self, other):
-        if other == 1:
-            self.client.decr(self.name)
-        else:
-            self.client.decrby(self.name, other)
-
-    def __int__(self):
-        return int(self.client.get(self.name))
-
-    def __repr__(self):
-        return repr(int(self))

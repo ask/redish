@@ -67,15 +67,6 @@ class Client(object):
         """
         return types.Dict(name, self.api, initial=initial, **extra)
 
-    def Counter(self, name, initial=None):
-        """The counter datatype.
-
-        :param name: Name of the counter.
-        :keyword initial: Initial value of the counter.
-
-        """
-        return types.Counter(name, self.api, initial=initial)
-
     def Queue(self, name, initial=None):
         """The queue datatype.
 
