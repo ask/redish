@@ -72,6 +72,7 @@ setup(
     author=redish.__author__,
     author_email=redish.__contact__,
     url=redish.__homepage__,
+    license="BSD",
     platforms=["any"],
     packages=packages,
     data_files=data_files,
@@ -83,11 +84,13 @@ setup(
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Framework :: Django",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: Database",
+        "Topic :: Database :: Front-Ends",
     ],
     long_description=codecs.open('README.rst', "r", "utf-8").read(),
 )
