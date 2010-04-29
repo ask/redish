@@ -465,9 +465,156 @@ class Int(Type):
     def __sub__(self, other):
         return int.__sub__(self.__int__(), other)
     
+    def __mul__(self, other):
+        return int.__mul__(self.__int__(), other)
+    
+    def __div__(self, other):
+        return int.__div__(self.__int__(), other)
+    
+    def __truediv__(self, other):
+        return int.__truediv__(self.__int__(), other)
+    
+    def __floordiv__(self, other):
+        return int.__floordiv__(self.__int__(), other)
+    
+    def __mod__(self, other):
+        return int.__mod__(self.__int__(), other)
+    
+    def __divmod__(self, other):
+        return int.__divmod__(self.__int__(), other)
+    
+    def __pow__(self, *args):
+        return int.__pow__(self.__int__(), *args)
+    
+    def __lshift__(self, other):
+        return int.__lshift__(self.__int__(), other)
+    
+    def __rshift__(self, other):
+        return int.__rshift__(self.__int__(), other)
+    
+    def __and__(self, other):
+        return int.__and__(self.__int__(), other)
+    
+    def __or__(self, other):
+        return int.__or__(self.__int__(), other)
+    
+    def __xor__(self, other):
+        return int.__xor__(self.__int__(), other)
+    
+    def __radd__(self, other):
+        return int.__radd__(self.__int__(), other)
+    
+    def __rsub__(self, other):
+        return int.__rsub__(self.__int__(), other)
+    
+    def __rmul__(self, other):
+        return int.__rmul__(self.__int__(), other)
+    
+    def __rdiv__(self, other):
+        return int.__rdiv__(self.__int__(), other)
+    
+    def __rtruediv__(self, other):
+        return int.__rtruediv__(self.__int__(), other)
+    
+    def __rfloordiv__(self, other):
+        return int.__rfloordiv__(self.__int__(), other)
+    
+    def __rmod__(self, other):
+        return int.__rmod__(self.__int__(), other)
+    
+    def __rdivmod__(self, other):
+        return int.__rdivmod__(self.__int__(), other)
+    
+    def __rpow__(self, *args):
+        return int.__pow__(self.__int__(), *args)
+    
+    def __rlshift__(self, other):
+        return int.__lshift__(self.__int__(), other)
+    
+    def __rrshift__(self, other):
+        return int.__rshift__(self.__int__(), other)
+    
+    def __rand__(self, other):
+        return int.__and__(self.__int__(), other)
+    
+    def __ror__(self, other):
+        return int.__or__(self.__int__(), other)
+    
+    def __rxor__(self, other):
+        return int.__xor__(self.__int__(), other)
+    
     def __iadd__(self, other):
         self.client.incr(self.name, other)
         return self
+    
+    def __isub__(self, other):
+        self.client.decr(self.name, other)
+        return self
+    
+    def __imul__(self, other):
+        self.client.set(self.name, int.__mul__(self.__int__(), other))
+        return self
+    
+    def __idiv__(self, other):
+        self.client.set(self.name, int.__div__(self.__int__(), other))
+        return self
+    
+    def __itruediv__(self, other):
+        self.client.set(self.name, int.__truediv__(self.__int__(), other))
+        return self
+    
+    def __ifloordiv__(self, other):
+        self.client.set(self.name, int.__floordiv__(self.__int__(), other))
+        return self
+    
+    def __imod__(self, other):
+        self.client.set(self.name, int.__mod__(self.__int__(), other))
+        return self
+    
+    def __ipow__(self, other):
+        self.client.set(self.name, int.__pow__(self.__int__(), other))
+        return self
+    
+    def __iand__(self, other):
+        self.client.set(self.name, int.__and__(self.__int__(), other))
+        return self
+    
+    def __ior__(self, other):
+        self.client.set(self.name, int.__or__(self.__int__(), other))
+        return self
+    
+    def __ixor__(self, other):
+        self.client.set(self.name, int.__xor__(self.__int__(), other))
+        return self
+    
+    def __ilshift__(self, other):
+        self.client.set(self.name, int.__lshift__(self.__int__(), other))
+        return self
+    
+    def __irshift__(self, other):
+        self.client.set(self.name, int.__rshift__(self.__int__(), other))
+        return self
+    
+    def __neg__(self):
+        return int.__neg__(self.__int__())
+    
+    def __pos__(self):
+        return int.__pos__(self.__int__())
+    
+    def __abs__(self):
+        return int.__abs__(self.__int__())
+    
+    def __invert__(self):
+        return int.__invert__(self.__int__())
+    
+    def __long__(self):
+        return int.__long__(self.__int__())
+    
+    def __float__(self):
+        return int.__float__(self.__int__())
+    
+    def __complex__(self):
+        return int.__complex__(self.__int__())
     
     def __int__(self):
         return int(self.client.get(self.name))

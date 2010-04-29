@@ -28,6 +28,31 @@ Braindump::
       File "redish/proxy.py", line 29, in __getitem__
         raise KeyError(key)
     KeyError: 'foo'
+    
+    # Int/Counter
+    >>> x["z"] = 1
+    >>> x["z"]
+    1
+    >>> x["z"].__class__
+    <class 'redish.types.Int'>
+    >>> x["z"] += 2
+    >>> x["z"]
+    3
+    >>> 3 * x["z"]
+    9
+    >>> z = x["z"]
+    >>> z += 1
+    >>> z
+    4
+    >>> x["z"]
+    4
+    # Don't get tripped up on assignment:
+    >>> z = 5
+    >>> z
+    5
+    >>> x["z"]
+    4
+    
 
     # Dict
     >>> x["dictionary"] = {"a": "b", "c": "d"}
@@ -66,7 +91,7 @@ Braindump::
     >>> list(s)
     ['opera', 'ie', 'firefox']
     
-    # Caution! Assignment copies
+    # N.B. Assignment copies by value.
     >>> x["game"] = x["set"]
     >>> x["game"].add("mobilesafari")
     True
@@ -77,7 +102,7 @@ Braindump::
     
     # Proxy object retains all the normal methods from Redis object
     >>> x.keys()
-    ['dictionary', 'Liszt', 'set', 'game']
+    ['dictionary', 'Liszt', 'set', 'game', 'z']
     >>> x.bgsave()
     True
     

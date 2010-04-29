@@ -17,9 +17,10 @@ TYPE_MAP = {
     "hash":   types.Dict,
 }
 
-def int_or_str(thing):
+def int_or_str(thing, key, client):
     try:
-        return int(thing)
+        int(thing)
+        return types.Int(key, client)
     except (TypeError, ValueError):
         return decode(thing, "UTF-8")
 
@@ -29,13 +30,13 @@ class Proxy(Redis):
         if typ == 'none':
             raise KeyError(key)
         elif typ == 'string':
-            return int_or_str(self.get(key))
+            return int_or_str(self.get(key), key, self)
         else:
             return TYPE_MAP[typ](key, self)
     
     def __setitem__(self, key, value):
-        if isinstance(value, int):
-            self.set(key, value)
+        if isinstance(value, (int, types.Int)):
+            self.set(key, int(value))
             return
         elif isinstance(value, basestring):
             self.set(key, encode(value, "UTF-8"))
