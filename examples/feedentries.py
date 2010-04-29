@@ -1,5 +1,5 @@
-from redish.model import Model, Manager
 from redish.utils import maybe_datetime
+from redish.models import Model, Manager
 
 
 class Entry(Model):
@@ -14,11 +14,11 @@ class Entry(Model):
 
     @property
     def guid_index(self):
-        return self.client.Set((self.feed_url, "guid"))
+        return self.objects.Set((self.feed_url, "guid"))
 
     @property
     def sort_index(self):
-        return self.client.SortedSet((self.feed_url, "sort"))
+        return self.objects.SortedSet((self.feed_url, "sort"))
 
 
 class Entries(Manager):
@@ -52,4 +52,3 @@ if __name__ == "__main__":
 
     for post in iter(posts):
         print("(%s) %s" % (post.id, post.title))
-

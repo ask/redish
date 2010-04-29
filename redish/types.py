@@ -1,16 +1,20 @@
 from Queue import Empty, Full
-
-from redish.utils import maybe_list, key
 import bisect
 
+from redis.exceptions import ResponseError
+from redish.utils import mkey
+
+
 class Type(object):
+    """Base-class for Redis datatypes."""
 
     def __init__(self, name, client):
-        self.name = key(name)
+        self.name = mkey(name)
         self.client = client
 
 
 def Id(name, client):
+    """Return the next value for an unique id."""
     return "%s:%s" % (name, client.incr("ids:%s" % (name, )), )
 
 
@@ -21,23 +25,21 @@ class List(Type):
         super(List, self).__init__(name, client)
         self.extend(initial or [])
 
-    def extend(self, iterable):
-        """Append the values in ``iterable`` to this list."""
-        for value in iterable:
-            self.append(value)
-
-    def extendleft(self, iterable):
-        """Add the values in ``iterable`` to the head of this list."""
-        for value in iterable:
-            self.appendleft(value)
-
     def __getitem__(self, index):
         """``x.__getitem__(index) <==> x[index]``"""
-        return self.client.lindex(self.name, index)
+        item = self.client.lindex(self.name, index)
+        if item:
+            return item
+        raise IndexError("list index out of range")
 
     def __setitem__(self, index, value):
         """``x.__setitem__(index, value) <==> x[index] = value``"""
-        return self.client.lset(self.name, index, value)
+        try:
+            self.client.lset(self.name, index, value)
+        except ResponseError, exc:
+            if "index out of range" in exc.args:
+                raise IndexError("list assignment index out of range")
+            raise
 
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
@@ -53,7 +55,8 @@ class List(Type):
 
     def __getslice__(self, i, j):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
-        return self.client.lrange(self.name, i, j)
+        # Redis indices are zero-based, while Python indices are 1-based.
+        return self.client.lrange(self.name, i, j - 1)
 
     def _as_list(self):
         return self.client.lrange(self.name, 0, -1)
@@ -68,7 +71,7 @@ class List(Type):
 
     def trim(self, start, stop):
         """Trim the list to the specified range of elements."""
-        return self.client.ltrim(self.name, start, stop)
+        return self.client.ltrim(self.name, start, stop - 1)
 
     def pop(self):
         """Remove and return the last element of the list."""
@@ -90,9 +93,24 @@ class List(Type):
             raise ValueError("%s not in list" % value)
         return count
 
+    def extend(self, iterable):
+        """Append the values in ``iterable`` to this list."""
+        for value in iterable:
+            self.append(value)
+
+    def extendleft(self, iterable):
+        """Add the values in ``iterable`` to the head of this list."""
+        for value in iterable:
+            self.appendleft(value)
+
 
 class Set(Type):
     """A set."""
+
+    def __init__(self, name, client, initial=None):
+        super(Set, self).__init__(name, client)
+        if initial:
+            self.update(initial)
 
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
@@ -141,49 +159,63 @@ class Set(Type):
             return member
         raise KeyError()
 
-    def union(self, others):
+    def union(self, other):
         """Return the union of sets as a new set.
 
         (i.e. all elements that are in either set.)
 
         """
-        return self.client.sunion(other.name for other in maybe_list(others))
+        return self.client.sunion([self.name, other.name])
 
-    def update(self, others):
+    def update(self, other):
         """Update this set with the union of itself and others."""
-        return self.client.sunionstore(other.name
-                                        for other in maybe_list(others))
+        if isinstance(other, self.__class__):
+            return self.client.sunionstore(self.name, [self.name, other.name])
+        else:
+            return map(self.add, other)
 
-    def intersection(self, others):
+    def intersection(self, other):
         """Return the intersection of two sets as a new set.
 
         (i.e. all elements that are in both sets.)
 
         """
-        return self.client.sinter(other.name for other in maybe_list(others))
+        return self.client.sinter([self.name, other.name])
 
-    def intersection_update(self, others):
+    def intersection_update(self, other):
         """Update the set with the intersection of itself and another."""
-        return self.client.sinterstore(other.name
-                                        for other in maybe_list(others))
+        return self.client.sinterstore(self.name, [self.name, other.name])
 
-    def difference(self, others):
+    def difference(self, other):
         """Return the difference of two or more sets as a new set.
 
         (i.e. all elements that are in this set but not the others.)
 
         """
-        return self.client.sdiff(other.name for other in maybe_list(others))
+        return self.client.sdiff([self.name, other.name])
 
-    def difference_update(self, others):
+    def difference_update(self, other):
         """Remove all elements of another set from this set."""
-        return self.client.sdiffstore(other.name
-                                        for other in maybe_list(others))
+        return self.client.sdiffstore(self.name, [self.name, other.name])
 
 
 class SortedSet(Type):
-    """A sorted set."""
+    """A sorted set.
 
+    :keyword initial: Initial data to populate the set with,
+      must be an iterable of ``(element, score)`` tuples.
+
+    """
+
+    def __init__(self, name, client, initial=None):
+        super(SortedSet, self).__init__(name, client)
+        if initial:
+            self.update(initial)
+
+    def __iter__(self):
+        """``x.__iter__() <==> iter(x)``"""
+        return iter(self._as_set())
+    
     def __getitem__(self, s):
         if isinstance(s, slice):
             i = s.start or 0
@@ -191,14 +223,10 @@ class SortedSet(Type):
         else:
             i = j = s
         return self.client.zrange(self.name, i, j)
-
+    
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
         return self.client.zcard(self.name)
-
-    def __iter__(self):
-        """``x.__iter__() <==> iter(x)``"""
-        return iter(self._as_set())
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
@@ -213,6 +241,11 @@ class SortedSet(Type):
         """Remove member."""
         if not self.client.zrem(self.name, member):
             raise KeyError(member)
+
+    def revrange(self, start=0, stop=-1):
+        stop = stop is None and -1 or stop
+        return self.client.zrevrange(self.name, start, stop)
+
     
     def discard(self, member):
         """Discard member."""
@@ -226,7 +259,7 @@ class SortedSet(Type):
         """Rank the set with scores being ordered from low to high."""
         return self.client.zrank(self.name, member)
 
-    def reverse_rank(self, member):
+    def revrank(self, member):
         """Rank the set with scores being ordered from high to low."""
         return self.client.zrevrank(self.name, member)
 
@@ -239,6 +272,10 @@ class SortedSet(Type):
         (a range query) from the sorted set."""
         return self.client.zrangebyscore(self.name, min, max)
 
+    def update(self, iterable):
+        for member, score in iterable:
+            self.add(member, score)
+
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
     
@@ -246,8 +283,8 @@ class SortedSet(Type):
         return self.client.zrange(self.name, 0, -1, withscores=True)
 
 
-
 class Dict(Type):
+    """A dictionary."""
 
     def __init__(self, name, client, initial=None, **extra):
         super(Dict, self).__init__(name, client)
@@ -283,15 +320,11 @@ class Dict(Type):
 
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
-        return iter(self.items())
+        return self.iteritems()
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
         return repr(self._as_dict())
-
-    def __cmp__(self, other):
-        """``x.__cmp__(other) <==> cmp(x, other)``"""
-        return cmp(self._as_dict(), other)
 
     def keys(self):
         """Returns the list of keys present in this dictionary."""
@@ -371,6 +404,9 @@ class Dict(Type):
 class Queue(Type):
     """FIFO Queue."""
 
+    Empty = Empty
+    Full = Full
+
     def __init__(self, name, client, initial=None, maxsize=0):
         super(Queue, self).__init__(name, client)
         self.list = List(name, client, initial)
@@ -391,7 +427,7 @@ class Queue(Type):
         Only applicable if :attr:`maxsize` is set.
 
         """
-        return self.maxsize and len(self.list) > self.maxsize
+        return self.maxsize and len(self.list) >= self.maxsize or False
 
     def get(self, block=True, timeout=None):
         """Remove and return an item from the queue.
@@ -435,39 +471,15 @@ class Queue(Type):
         return len(self.list)
 
 
-class LIFOQueue(Queue):
-    """LIFO Queue."""
+class LifoQueue(Queue):
+    """Variant of :class:`Queue` that retrieves most recently added
+    entries first."""
 
     def __init__(self, name, client, initial=None, maxsize=0):
-        super(LIFOQueue, self).__init__(name, client, initial, maxsize)
+        super(LifoQueue, self).__init__(name, client, initial, maxsize)
         self._pop = self.list.popleft
         self._bpop = self.client.blpop
 
-
-class Counter(Type):
-
-    def __init__(self, name, client, initial=None):
-        super(Counter, self).__init__(name, client)
-        if initial is not None:
-            self.client.set(self.name, int(initial))
-
-    def __iadd__(self, other):
-        if other == 1:
-            self.client.incr(self.name)
-        else:
-            self.client.incrby(self.name, other)
-
-    def __isub__(self, other):
-        if other == 1:
-            self.client.decr(self.name)
-        else:
-            self.client.decrby(self.name, other)
-
-    def __int__(self):
-        return int(self.client.get(self.name))
-
-    def __repr__(self):
-        return repr(int(self))
 
 class Int(Type):
     def __add__(self, other):
@@ -687,7 +699,7 @@ class ZSet(object):
         """Rank the set with scores being ordered from low to high."""
         return self._as_set().index(member)
     
-    def reverse_rank(self, member):
+    def revrank(self, member):
         """Rank the set with scores being ordered from high to low."""
         return self.__len__() - self.rank(member) - 1
     

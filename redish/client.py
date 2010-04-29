@@ -1,13 +1,29 @@
 from redis import Redis as _RedisClient
+from redis.exceptions import ResponseError
 
 from redish import types
-from redish.utils import key
+from redish.utils import mkey
 from redish.serialization import Pickler
 
 DEFAULT_PORT = 6379
 
 
 class Client(object):
+    """Redis Client
+
+    :keyword host: Hostname of the Redis server to connect to.
+        Default is ``"localhost"``.
+    :keyword port: Port of the server to connect to.
+        Default is ``6379``.
+    :keyword db: Name of the database to use.
+        Default is to use the default database.
+    :keyword serializer: Object used to serialize/deserialize values.
+        Must support the methods ``serialize(value)`` and
+        ``deserialize(value)``. The default is to use
+        :class:`redish.serialization.Pickler`.
+
+    """
+
     host = "localhost"
     port = DEFAULT_PORT
     db = None
@@ -23,6 +39,7 @@ class Client(object):
         self.api = _RedisClient(self.host, self.port, self.db)
 
     def id(self, name):
+        """Return the next id for a name."""
         return types.Id(name, self.api)
 
     def List(self, name, initial=None):
@@ -31,24 +48,34 @@ class Client(object):
         :param name: The name of the list.
         :keyword initial: Initial contents of the list.
 
+        See :class:`redish.types.List`.
+
         """
         return types.List(name, self.api, initial=initial)
 
-    def SortedSet(self, name):
-        """The sorted set datatype.
-
-        :param name: The name of the sorted set.
-
-        """
-        return types.SortedSet(name, self.api)
-
-    def Set(self, name):
+    def Set(self, name, initial=None):
         """The set datatype.
 
         :param name: The name of the set.
+        :keyword initial: Initial members of the set.
+
+        See :class:`redish.types.Set`.
 
         """
-        return types.Set(name, self.api)
+        return types.Set(name, self.api, initial)
+
+
+    def SortedSet(self, name, initial=None):
+        """The sorted set datatype.
+
+        :param name: The name of the sorted set.
+        :param initial: Initial members of the set as an iterable
+           of ``(element, score)`` tuples.
+
+        See :class:`redish.types.SortedSet`.
+
+        """
+        return types.SortedSet(name, self.api, initial)
 
     def Dict(self, name, initial=None, **extra):
         """The dictionary datatype (Hash).
@@ -60,43 +87,41 @@ class Client(object):
         The ``initial``, and ``**extra`` keyword arguments
         will be merged (keyword arguments has priority).
 
+        See :class:`redish.types.Dict`.
+
         """
         return types.Dict(name, self.api, initial=initial, **extra)
 
-    def Counter(self, name, initial=None):
-        """The counter datatype.
-
-        :param name: Name of the counter.
-        :keyword initial: Initial value of the counter.
-
-        """
-        return types.Counter(name, self.api, initial=initial)
-
-    def Queue(self, name, initial=None):
+    def Queue(self, name, initial=None, maxsize=None):
         """The queue datatype.
 
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
 
-        """
-        return types.Queue(name, self.api, initial=initial)
+        See :class:`redish.types.Queue`.
 
-    def LIFOQueue(self, name, initial=None):
+        """
+        return types.Queue(name, self.api, initial=initial, maxsize=maxsize)
+
+    def LifoQueue(self, name, initial=None, maxsize=None):
         """The LIFO queue datatype.
 
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
 
+        See :class:`redish.types.LifoQueue`.
+
         """
-        return types.LIFOQueue(name, self.api, initial=initial)
+        return types.LifoQueue(name, self.api,
+                               initial=initial, maxsize=maxsize)
 
     def prepare_value(self, value):
         """Encode python object to be stored in the database."""
-        return self.serializer.serialize(value)
+        return self.serializer.encode(value)
 
     def value_to_python(self, value):
         """Decode value to a Python object."""
-        return self.serializer.deserialize(value)
+        return self.serializer.decode(value)
 
     def clear(self):
         """Remove all keys from the current database."""
@@ -104,11 +129,17 @@ class Client(object):
 
     def update(self, mapping):
         """Update database with the key/values from a :class:`dict`."""
-        return self.api.mset(mapping)
+        return self.api.mset(dict((key, self.prepare_value(value))
+                                for key, value in mapping.items()))
 
     def rename(self, old_name, new_name):
         """Rename key to a new name."""
-        return self.api.rename(key(old_name), key(new_name))
+        try:
+            self.api.rename(mkey(old_name), mkey(new_name))
+        except ResponseError, exc:
+            if "no such key" in exc.args:
+                raise KeyError(old_name)
+            raise
 
     def keys(self, pattern="*"):
         """Get a list of all the keys in the database, or
@@ -144,21 +175,12 @@ class Client(object):
 
     def pop(self, name):
         """Get and remove key from database (atomic)."""
-        name = key(name)
-        temp = key((name, "__poptmp__"))
-        if self.rename(name, temp):
-            value = self[temp]
-            del(self[temp])
-            return value
-        raise KeyError(name)
-
-    def __getitem__(self, name):
-        """``x.__getitem__(name) <==> x[name]``"""
-        name = key(name)
-        value = self.api.get(name)
-        if value is None:
-            raise KeyError(name)
-        return self.value_to_python(value)
+        name = mkey(name)
+        temp = mkey((name, "__poptmp__"))
+        self.rename(name, temp)
+        value = self[temp]
+        del(self[temp])
+        return value
 
     def get(self, key, default=None):
         """Returns the value at ``key`` if present, otherwise returns
@@ -168,13 +190,21 @@ class Client(object):
         except KeyError:
             return default
 
+    def __getitem__(self, name):
+        """``x.__getitem__(name) <==> x[name]``"""
+        name = mkey(name)
+        value = self.api.get(name)
+        if value is None:
+            raise KeyError(name)
+        return self.value_to_python(value)
+
     def __setitem__(self, name, value):
         """``x.__setitem(name, value) <==> x[name] = value``"""
-        return self.api.set(key(name), self.prepare_value(value))
+        return self.api.set(mkey(name), self.prepare_value(value))
 
     def __delitem__(self, name):
         """``x.__delitem__(name) <==> del(x[name])``"""
-        name = key(name)
+        name = mkey(name)
         if not self.api.delete(name):
             raise KeyError(name)
 
@@ -184,7 +214,7 @@ class Client(object):
 
     def __contains__(self, name):
         """``x.__contains__(name) <==> name in x``"""
-        return self.api.exists(key(name))
+        return self.api.exists(mkey(name))
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
