@@ -1,5 +1,7 @@
 from __future__ import with_statement
 
+from redish import types
+from redish.client import ResponseError
 from redish.tests.test_client import ClientTestCase
 
 
@@ -21,9 +23,21 @@ class test_List(ClientTestCase):
         for i, name in enumerate(revnames):
             self.assertEqual(l[i], name)
 
-
         with self.assertRaises(IndexError):
             l[99] = "value"
+
+    def test__setitem__respects_custom_error(self):
+
+        class MockClient(object):
+
+            def lset(self, *args, **kwargs):
+                raise ResponseError("connection lost")
+
+        l = self.client.List("test:List:__setitem__ResponseError")
+        l.client = MockClient()
+
+        with self.assertRaises(ResponseError):
+            l[1] = 2
 
     def test__len__(self):
         initial = range(100)
@@ -44,7 +58,8 @@ class test_List(ClientTestCase):
     def test__getslice__(self):
         data = ["foo", "bar", "baz", "xuzzy"]
         l = self.client.List("test:List:__getslice__", data)
-        self.assertListEqual(l[0:2], ["foo", "bar"])
+        self.assertListEqual(l[:2], ["foo", "bar"])
+        self.assertListEqual(l[:-1], ["foo", "bar", "baz"])
 
     def test_append(self):
         data = ["foo", "bar", "baz"]
@@ -82,6 +97,9 @@ class test_List(ClientTestCase):
         l.remove("bar", 100)
         self.assertEqual(len(l), 3)
 
+        with self.assertRaises(ValueError):
+            l.remove("nonexistent")
+
     def test_extend(self):
         data1 = ["foo", "bar", "baz"]
         data2 = ["Bart", "Lisa", "Homer", "Marge", "Maggie"]
@@ -98,6 +116,10 @@ class test_List(ClientTestCase):
 
 
 class test_Set(ClientTestCase):
+
+    def test_no_initial_data(self):
+        s = self.client.Set("test:Set:no_initial_data")
+        self.assertEqual(len(s), 0)
 
     def test__iter__(self):
         data = ["foo", "bar", "baz", "zaz"]
@@ -141,6 +163,11 @@ class test_Set(ClientTestCase):
         self.assertIn(member, data)
         self.assertNotIn(member, s)
         self.assertEqual(len(s), len(data) - 1)
+
+    def test_pop_empty_set_raises_KeyError(self):
+        s = self.client.Set("test:Set:pop_empty_set")
+        with self.assertRaises(KeyError):
+            s.pop()
 
     def test_union(self):
         ds1 = set(["foo", "bar", "baz"])
@@ -198,6 +225,10 @@ class test_Set(ClientTestCase):
 
 class test_SortedSet(ClientTestCase):
 
+    def test_no_initial_data(self):
+        z = self.client.SortedSet("test:SortedSet:no_initial_data")
+        self.assertEqual(len(z), 0)
+
     def test__iter__(self):
         data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
         z = self.client.SortedSet("test:SortedSet:__iter__", data)
@@ -207,6 +238,7 @@ class test_SortedSet(ClientTestCase):
         data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
         z = self.client.SortedSet("test:SortedSet:__getslice__", data)
         self.assertListEqual(z[0:2], ["bar", "baz"])
+        self.assertListEqual(z[0:-1], ["bar", "baz"])
 
     def test__len__(self):
         data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
@@ -229,6 +261,9 @@ class test_SortedSet(ClientTestCase):
         z = self.client.SortedSet("test:SortedSet:remove", data)
         z.remove("bar")
         self.assertListEqual(list(z), ["baz", "foo"])
+
+        with self.assertRaises(KeyError):
+            z.remove("nonexistent")
 
     def test_revrange(self):
         data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
@@ -278,13 +313,22 @@ class test_SortedSet(ClientTestCase):
 
 class test_Dict(ClientTestCase):
 
-
     def test__init__(self):
         data = {"name": "George Constanza"}
         d = self.client.Dict("test:Dict:__init__", data,
                              company="Vandelay Industries")
         self.assertEqual(d["name"], "George Constanza")
         self.assertEqual(d["company"], "Vandelay Industries")
+
+    def test__missing__(self):
+
+        class MissingDict(types.Dict):
+
+            def __missing__(self, key):
+                return 42
+
+        d = MissingDict("test:Dict:__missing__", self.client.api)
+        self.assertEqual(d["nonexistent"], 42)
 
     def test_set_get_delete(self):
         d = self.client.Dict("test:Dict:set_get_delete")
@@ -405,14 +449,14 @@ class QueueCase(ClientTestCase):
             return
         q = self.qtype("test:Queue:put_get")
         q.put("foo")
-        self.assertEqual(q.get_nowait(), "foo")
+        self.assertEqual(q.get(block=False), "foo")
 
-    def test_get_nowait_raises_Empty(self):
+    def test_get_raises_Empty(self):
         if not self.qtype:
             return
         q = self.qtype("test:Queue:get_raises_Empty")
         with self.assertRaises(q.Empty):
-            q.get_nowait()
+            q.get(block=False)
 
     def test_put_raises_Full(self):
         if not self.qtype:
@@ -445,7 +489,7 @@ class test_Queue(QueueCase):
         for item in items:
             q.put(item)
         for item in items:
-            self.assertEqual(q.get_nowait(), item)
+            self.assertEqual(q.get(block=False), item)
 
 
 class test_LifoQueue(QueueCase):
@@ -459,4 +503,4 @@ class test_LifoQueue(QueueCase):
         for item in items:
             q.put(item)
         for item in reversed(items):
-            self.assertEqual(q.get_nowait(), item)
+            self.assertEqual(q.get(block=False), item)

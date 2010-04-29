@@ -54,9 +54,7 @@ class List(Type):
     def __getslice__(self, i, j):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
         # Redis indices are zero-based, while Python indices are 1-based.
-        if j != -1:
-            j -= 1
-        return self.client.lrange(self.name, i, j)
+        return self.client.lrange(self.name, i, j - 1)
 
     def _as_list(self):
         return self.client.lrange(self.name, 0, -1)
@@ -218,9 +216,7 @@ class SortedSet(Type):
 
     def __getslice__(self, start, stop):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
-        if stop != - 1:
-            stop -= 1
-        return self.client.zrange(self.name, start, stop)
+        return self.client.zrange(self.name, start, stop - 1)
 
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
@@ -309,7 +305,7 @@ class Dict(Type):
 
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
-        return iter(self.items())
+        return self.iteritems()
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""

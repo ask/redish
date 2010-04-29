@@ -1,4 +1,5 @@
 from redis import Redis as _RedisClient
+from redis.exceptions import ResponseError
 
 from redish import types
 from redish.utils import mkey
@@ -105,7 +106,13 @@ class Client(object):
 
     def rename(self, old_name, new_name):
         """Rename key to a new name."""
-        return self.api.rename(mkey(old_name), mkey(new_name))
+        try:
+            self.api.rename(mkey(old_name), mkey(new_name))
+        except ResponseError, exc:
+            if "no such key" in exc.args:
+                raise KeyError(old_name)
+            raise
+
 
     def keys(self, pattern="*"):
         """Get a list of all the keys in the database, or
@@ -143,11 +150,10 @@ class Client(object):
         """Get and remove key from database (atomic)."""
         name = mkey(name)
         temp = mkey((name, "__poptmp__"))
-        if self.rename(name, temp):
-            value = self[temp]
-            del(self[temp])
-            return value
-        raise KeyError(name)
+        self.rename(name, temp)
+        value = self[temp]
+        del(self[temp])
+        return value
 
     def __getitem__(self, name):
         """``x.__getitem__(name) <==> x[name]``"""

@@ -9,8 +9,11 @@ from redish.tests import config
 class ClientTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.client = client.Client(**config.connection)
+        self.client = self.get_client()
         self.client.clear()
+
+    def get_client(self):
+        return client.Client(**config.connection)
 
     def tearDown(self):
         self.client.clear()
@@ -31,6 +34,10 @@ class test_Client(ClientTestCase):
         del(self.client["test:set_object"])
         with self.assertRaises(KeyError):
             self.client["test:set_object"]
+
+        with self.assertRaises(KeyError):
+            # delete nonexistent key raises KeyError
+            del(self.client["test:set_object"])
 
     def test_clear(self):
         self.client["test:clear"] = [1, 2, 3]
@@ -53,35 +60,55 @@ class test_Client(ClientTestCase):
         self.assertEqual(self.client["test:rename:second"], "some-value")
         with self.assertRaises(KeyError):
             self.client["test:rename:first"]
+
+        with self.assertRaises(KeyError):
+            # rename nonexistent key raises KeyError
+            self.client.rename("test:rename:first", "test:rename:second")
         self.client.clear()
 
+    def test_rename_respects_custom_error(self):
+
+        class MockClient(object):
+
+            def rename(self, *args, **kwargs):
+                raise client.ResponseError("connection lost")
+
+        c = self.get_client()
+        c.api = MockClient()
+
+        with self.assertRaises(client.ResponseError):
+            c.rename("test:renamex:1", "test:renamex:2")
+
     def test_iterkeys(self):
+        # also tests c.keys()
         keys = {"test:iterkeys:1": 1,
                 "test:iterkeys:2": 2,
                 "test:iterkeys:3": 3,
                 "test:iterkeys:4": 4}
         self.client.update(keys)
-        self.assertItemsEqual(list(self.client.keys("test:iterkeys:*")),
+        self.assertItemsEqual(list(self.client.iterkeys("test:iterkeys:*")),
                 keys.keys())
         self.client.clear()
 
-    def test_iteritems(self):
-        keys = {"test:iteritems:1": 1,
-                "test:iteritems:2": 2,
-                "test:iteritems:3": 3,
-                "test:iteritems:4": 4}
+    def test_items(self):
+        # also tests c.iteritems()
+        keys = {"test:items:1": 1,
+                "test:items:2": 2,
+                "test:items:3": 3,
+                "test:items:4": 4}
         self.client.update(keys)
-        items = dict(self.client.iteritems("test:iteritems:*"))
+        items = dict(self.client.items("test:items:*"))
         self.assertDictContainsSubset(keys, items)
         self.client.clear()
 
-    def test_itervalues(self):
-        keys = {"test:itervalues:1": 1,
-                "test:itervalues:2": 2,
-                "test:itervalues:3": 3,
-                "test:itervalues:4": 4}
+    def test_values(self):
+        # also tests c.itervalues()
+        keys = {"test:values:1": 1,
+                "test:values:2": 2,
+                "test:values:3": 3,
+                "test:values:4": 4}
         self.client.update(keys)
-        values = list(self.client.itervalues("test:itervalues:*"))
+        values = self.client.values("test:values:*")
         self.assertItemsEqual(values, keys.values())
         self.client.clear()
 
@@ -91,6 +118,10 @@ class test_Client(ClientTestCase):
         self.assertEqual(item, "the quick brown fox...")
         with self.assertRaises(KeyError):
             self.client["test:pop"]
+
+        with self.assertRaises(KeyError):
+            # pop on nonexistent key raises KeyError
+            self.client.pop("test:pop")
 
     def test_get(self):
         self.client["test:get:exists"] = "George Constanza"
