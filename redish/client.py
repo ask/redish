@@ -9,6 +9,21 @@ DEFAULT_PORT = 6379
 
 
 class Client(object):
+    """Redis Client
+
+    :keyword host: Hostname of the Redis server to connect to.
+        Default is ``"localhost"``.
+    :keyword port: Port of the server to connect to.
+        Default is ``6379``.
+    :keyword db: Name of the database to use.
+        Default is to use the default database.
+    :keyword serializer: Object used to serialize/deserialize values.
+        Must support the methods ``serialize(value)`` and
+        ``deserialize(value)``. The default is to use
+        :class:`redish.serialization.Pickler`.
+
+    """
+
     host = "localhost"
     port = DEFAULT_PORT
     db = None
@@ -24,6 +39,7 @@ class Client(object):
         self.api = _RedisClient(self.host, self.port, self.db)
 
     def id(self, name):
+        """Return the next id for a name."""
         return types.Id(name, self.api)
 
     def List(self, name, initial=None):
@@ -31,6 +47,8 @@ class Client(object):
 
         :param name: The name of the list.
         :keyword initial: Initial contents of the list.
+
+        See :class:`redish.types.List`.
 
         """
         return types.List(name, self.api, initial=initial)
@@ -40,6 +58,8 @@ class Client(object):
 
         :param name: The name of the set.
         :keyword initial: Initial members of the set.
+
+        See :class:`redish.types.Set`.
 
         """
         return types.Set(name, self.api, initial)
@@ -51,6 +71,8 @@ class Client(object):
         :param name: The name of the sorted set.
         :param initial: Initial members of the set as an iterable
            of ``(element, score)`` tuples.
+
+        See :class:`redish.types.SortedSet`.
 
         """
         return types.SortedSet(name, self.api, initial)
@@ -65,6 +87,8 @@ class Client(object):
         The ``initial``, and ``**extra`` keyword arguments
         will be merged (keyword arguments has priority).
 
+        See :class:`redish.types.Dict`.
+
         """
         return types.Dict(name, self.api, initial=initial, **extra)
 
@@ -73,6 +97,8 @@ class Client(object):
 
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
+
+        See :class:`redish.types.Queue`.
 
         """
         return types.Queue(name, self.api, initial=initial, maxsize=maxsize)
@@ -83,17 +109,19 @@ class Client(object):
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
 
+        See :class:`redish.types.LifoQueue`.
+
         """
         return types.LifoQueue(name, self.api,
                                initial=initial, maxsize=maxsize)
 
     def prepare_value(self, value):
         """Encode python object to be stored in the database."""
-        return self.serializer.serialize(value)
+        return self.serializer.encode(value)
 
     def value_to_python(self, value):
         """Decode value to a Python object."""
-        return self.serializer.deserialize(value)
+        return self.serializer.decode(value)
 
     def clear(self):
         """Remove all keys from the current database."""
@@ -112,7 +140,6 @@ class Client(object):
             if "no such key" in exc.args:
                 raise KeyError(old_name)
             raise
-
 
     def keys(self, pattern="*"):
         """Get a list of all the keys in the database, or
@@ -155,14 +182,6 @@ class Client(object):
         del(self[temp])
         return value
 
-    def __getitem__(self, name):
-        """``x.__getitem__(name) <==> x[name]``"""
-        name = mkey(name)
-        value = self.api.get(name)
-        if value is None:
-            raise KeyError(name)
-        return self.value_to_python(value)
-
     def get(self, key, default=None):
         """Returns the value at ``key`` if present, otherwise returns
         ``default`` (``None`` by default.)"""
@@ -170,6 +189,14 @@ class Client(object):
             return self[key]
         except KeyError:
             return default
+
+    def __getitem__(self, name):
+        """``x.__getitem__(name) <==> x[name]``"""
+        name = mkey(name)
+        value = self.api.get(name)
+        if value is None:
+            raise KeyError(name)
+        return self.value_to_python(value)
 
     def __setitem__(self, name, value):
         """``x.__setitem(name, value) <==> x[name] = value``"""
