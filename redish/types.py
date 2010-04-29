@@ -681,11 +681,11 @@ class ZSet(object):
     
     def rank(self, member):
         """Rank the set with scores being ordered from low to high."""
-        return self._as_set()
+        return self._as_set().index(member)
     
     def reverse_rank(self, member):
         """Rank the set with scores being ordered from high to low."""
-        return list(reversed(self._as_set()))
+        return self.__len__() - self.rank(member) - 1
     
     def score(self, member):
         """Return the score associated with the specified member."""
