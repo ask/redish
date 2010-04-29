@@ -159,46 +159,44 @@ class Set(Type):
             return member
         raise KeyError()
 
-    def union(self, others):
+    def union(self, other):
         """Return the union of sets as a new set.
 
         (i.e. all elements that are in either set.)
 
         """
-        return self.client.sunion(other.name for other in maybe_list(others))
+        return self.client.sunion([self.name, other.name])
 
     def update(self, other):
         """Update this set with the union of itself and others."""
         if isinstance(other, self.__class__):
-            return self.client.sunionstore(self.name, other.name)
+            return self.client.sunionstore(self.name, [self.name, other.name])
         else:
             return map(self.add, other)
 
-    def intersection(self, others):
+    def intersection(self, other):
         """Return the intersection of two sets as a new set.
 
         (i.e. all elements that are in both sets.)
 
         """
-        return self.client.sinter(other.name for other in maybe_list(others))
+        return self.client.sinter([self.name, other.name])
 
-    def intersection_update(self, others):
+    def intersection_update(self, other):
         """Update the set with the intersection of itself and another."""
-        return self.client.sinterstore(other.name
-                                        for other in maybe_list(others))
+        return self.client.sinterstore(self.name, [self.name, other.name])
 
-    def difference(self, others):
+    def difference(self, other):
         """Return the difference of two or more sets as a new set.
 
         (i.e. all elements that are in this set but not the others.)
 
         """
-        return self.client.sdiff(other.name for other in maybe_list(others))
+        return self.client.sdiff([self.name, other.name])
 
-    def difference_update(self, others):
+    def difference_update(self, other):
         """Remove all elements of another set from this set."""
-        return self.client.sdiffstore(other.name
-                                        for other in maybe_list(others))
+        return self.client.sdiffstore(self.name, [self.name, other.name])
 
 
 class SortedSet(Type):
