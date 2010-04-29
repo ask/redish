@@ -457,3 +457,21 @@ class Counter(Type):
 
     def __repr__(self):
         return repr(int(self))
+
+class Int(Type):
+    def __add__(self, other):
+        return int.__add__(self.__int__(), other)
+    
+    def __sub__(self, other):
+        return int.__sub__(self.__int__(), other)
+    
+    def __iadd__(self, other):
+        self.client.incr(self.name, other)
+        return self
+    
+    def __int__(self):
+        return int(self.client.get(self.name))
+    
+    def __repr__(self):
+        return repr(int(self))
+    

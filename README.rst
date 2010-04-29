@@ -30,7 +30,6 @@ Braindump::
     KeyError: 'foo'
 
     # Dict
-    
     >>> x["dictionary"] = {"a": "b", "c": "d"}
     >>> x["dictionary"]
     {'a': 'b', 'c': 'd'}
@@ -43,7 +42,6 @@ Braindump::
     <class 'redish.types.Dict'>
     
     # List
-
     >>> x["Liszt"] = ['w', 'x', 'y', 'z']
     >>> x["Liszt"]
     ['w', 'x', 'y', 'z']
@@ -58,7 +56,6 @@ Braindump::
     'b'
     
     # Set
-
     >>> x["set"] = set(["opera", "firefox", "ie", "safari"])
     >>> s = x["set"]
     >>> "opera" in s
@@ -70,7 +67,6 @@ Braindump::
     ['opera', 'ie', 'firefox']
     
     # Caution! Assignment copies
-    
     >>> x["game"] = x["set"]
     >>> x["game"].add("mobilesafari")
     True
@@ -78,6 +74,12 @@ Braindump::
     set(['opera', 'ie', 'firefox', 'mobilesafari'])
     >>> x["set"]
     set(['opera', 'ie', 'firefox'])
+    
+    # Proxy object retains all the normal methods from Redis object
+    >>> x.keys()
+    ['dictionary', 'Liszt', 'set', 'game']
+    >>> x.bgsave()
+    True
     
         
 Installation
