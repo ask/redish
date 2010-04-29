@@ -317,6 +317,8 @@ class Dict(Type):
 
     def __cmp__(self, other):
         """``x.__cmp__(other) <==> cmp(x, other)``"""
+        if isinstance(other, self.__class__):
+            other = other._as_dict()
         return cmp(self._as_dict(), other)
 
     def keys(self):

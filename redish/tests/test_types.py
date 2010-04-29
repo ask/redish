@@ -274,3 +274,99 @@ class test_SortedSet(ClientTestCase):
         z = self.client.SortedSet("test:SortedSet:range_by_score", data)
         self.assertListEqual(z.range_by_score(0.3, 1.0), [
                                 "baz", "zaz", "foo"])
+
+
+class test_Dict(ClientTestCase):
+
+
+    def test__init__(self):
+        data = {"name": "George Constanza"}
+        d = self.client.Dict("test:Dict:__init__", data,
+                             company="Vandelay Industries")
+        self.assertEqual(d["name"], "George Constanza")
+        self.assertEqual(d["company"], "Vandelay Industries")
+
+    def test_set_get_delete(self):
+        d = self.client.Dict("test:Dict:set_get_delete")
+        d["foo"] = "bar"
+        self.assertEqual(d["foo"], "bar")
+        del(d["foo"])
+        with self.assertRaises(KeyError):
+            d["foo"]
+        with self.assertRaises(KeyError):
+            del(d["foo"])
+
+    def test__getitem__raises_KeyError(self):
+        d = self.client.Dict("test:Dict:__getitem__raises_KeyError")
+        with self.assertRaises(KeyError):
+            d["nonexistent"]
+
+    def test__contains__(self):
+        d = self.client.Dict("test:Dict:__contains__", {"name": "Jerry"})
+        self.assertIn("name", d)
+        self.assertNotIn("address", d)
+
+    def test__len__(self):
+        d = self.client.Dict("test:Dict:__len__", dict((i, i)
+                                                    for i in range(100)))
+        self.assertEqual(len(d), 100)
+
+    def test__iter__(self):
+        # also tests d.iteritems() + d.items()
+        items = dict((i, i) for i in map(str, range(100)))
+        d = self.client.Dict("test:Dict:__iter__", items)
+        self.assertListEqual(list(iter(d)), items.items())
+
+    def test__repr__(self):
+        d = self.client.Dict("test:Dict:__repr__", foo="bar")
+        self.assertIn("'foo': 'bar'", repr(d))
+
+    def test_iterkeys(self):
+        # also tests d.keys()
+        items = dict((i, i) for i in map(str, range(100)))
+        d = self.client.Dict("test:Dict:iterkeys", items)
+        self.assertItemsEqual(list(d.iterkeys()), items.keys())
+
+    def test_itervalues(self):
+        # also tests d.values()
+        items = dict((i, i) for i in map(str, range(100)))
+        d = self.client.Dict("test:Dict:itervalues", items)
+        self.assertItemsEqual(list(d.itervalues()), items.values())
+
+    def test_has_key(self):
+        d = self.client.Dict("test:Dict:has_key", foo="bar")
+        self.assertTrue(d.has_key("foo"))
+        self.assertFalse(d.has_key("bar"))
+
+    def test_get(self):
+        d = self.client.Dict("test:Dict:get", foo="bar")
+        self.assertEqual(d.get("foo"), "bar")
+        self.assertIsNone(d.get("bar"))
+        self.assertEqual(d.get("bar", 12345), 12345)
+
+    def test_setdefault(self):
+        d = self.client.Dict("test:Dict:setdefault")
+        self.assertEqual(d.setdefault("somekey", "54321"), "54321")
+        self.assertEqual(d["somekey"], "54321")
+
+        d["otherkey"] = "56789"
+        self.assertEqual(d.setdefault("otherkey", "12345"), "56789")
+        self.assertEqual(d["otherkey"], "56789")
+
+    def test_pop(self):
+        d = self.client.Dict("test:Dict:pop", foo="bar")
+        self.assertIsNone(d.pop("nonexistent"))
+        self.assertEqual(d.pop("nonexistent", "12345"), "12345")
+        self.assertEqual(d.pop("foo"), "bar")
+        self.assertIsNone(d.pop("foo"))
+
+        with self.assertRaises(KeyError):
+            d["foo"]
+
+    def test_update(self):
+        data1 = {"George Constanza": "architect",
+                 "Jerry Seinfeld": "comedian"}
+        data2 = {"Elaine Marie Benes": "assistant"}
+        d = self.client.Dict("test:Dict:update", data2)
+        d.update(data1)
+        self.assertDictContainsSubset(data1, dict(d))
