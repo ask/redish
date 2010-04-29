@@ -212,21 +212,19 @@ class SortedSet(Type):
         if initial:
             self.update(initial)
 
-    def update(self, iterable):
-        for member, score in iterable:
-            self.add(member, score)
+    def __iter__(self):
+        """``x.__iter__() <==> iter(x)``"""
+        return iter(self._as_set())
 
     def __getslice__(self, start, stop):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
+        if stop != - 1:
+            stop -= 1
         return self.client.zrange(self.name, start, stop)
 
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
         return self.client.zcard(self.name)
-
-    def __iter__(self):
-        """``x.__iter__() <==> iter(x)``"""
-        return iter(self._as_set())
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
@@ -242,20 +240,20 @@ class SortedSet(Type):
         if not self.client.zrem(self.name, member):
             raise KeyError(member)
 
-    def revrange(self, start, stop):
+    def revrange(self, start=0, stop=-1):
         return self.client.zrevrange(self.name, start, stop)
 
     def increment(self, member, amount=1):
         """Increment the score of ``member`` by ``amount``."""
         return self.client.zincrby(self.name, member, amount)
 
-    def rank(self):
+    def rank(self, member):
         """Rank the set with scores being ordered from low to high."""
-        return self.client.zrank(self.name)
+        return self.client.zrank(self.name, member)
 
-    def reverse_rank(self):
+    def revrank(self, member):
         """Rank the set with scores being ordered from high to low."""
-        return self.client.zrevrank(self.name)
+        return self.client.zrevrank(self.name, member)
 
     def score(self, member):
         """Return the score associated with the specified member."""
@@ -265,6 +263,10 @@ class SortedSet(Type):
         """Return all the elements with score >= min and score <= max
         (a range query) from the sorted set."""
         return self.client.zrangebyscore(self.name, min, max)
+
+    def update(self, iterable):
+        for member, score in iterable:
+            self.add(member, score)
 
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)

@@ -194,3 +194,83 @@ class test_Set(ClientTestCase):
         s2 = self.client.Set("test:Set:difference_update:2", ds2)
         s1.difference_update(s2)
         self.assertSetEqual(s1._as_set(), ds1.difference(ds2))
+
+
+class test_SortedSet(ClientTestCase):
+
+    def test__iter__(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:__iter__", data)
+        self.assertListEqual(list(iter(z)), ["bar", "baz", "foo"])
+
+    def test__getslice__(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:__getslice__", data)
+        self.assertListEqual(z[0:2], ["bar", "baz"])
+
+    def test__len__(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:__len__", data)
+        self.assertEqual(len(z), len(data))
+
+    def test__repr__(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:__repr__", data)
+        self.assertIn("'foo'", repr(z))
+
+    def test_add(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:add", data)
+        z.add("xuzzy", 0.4)
+        self.assertListEqual(list(z), ["bar", "baz", "xuzzy", "foo"])
+
+    def test_remove(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:remove", data)
+        z.remove("bar")
+        self.assertListEqual(list(z), ["baz", "foo"])
+
+    def test_revrange(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:revrange", data)
+        self.assertListEqual(z.revrange(), ["foo", "baz", "bar"])
+
+    def test_increment(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:increment", data)
+        z.increment("bar", 1)
+        self.assertListEqual(list(z), ["baz", "foo", "bar"])
+
+    def test_rank(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:rank", data)
+        self.assertEqual(z.rank("bar"), 0)
+        self.assertEqual(z.rank("baz"), 1)
+        self.assertEqual(z.rank("foo"), 2)
+
+    def test_revrank(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:revrank", data)
+        self.assertEqual(z.revrank("bar"), 2)
+        self.assertEqual(z.revrank("baz"), 1)
+        self.assertEqual(z.revrank("foo"), 0)
+
+    def test_score(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        z = self.client.SortedSet("test:SortedSet:score", data)
+        for member, score in data:
+            self.assertEqual(z.score(member), score)
+
+    def test_update(self):
+        data1 = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3))
+        data2 = (("bar", 1.2), ("xuzzy", 0.2), ("zaz", 0.4))
+        z = self.client.SortedSet("test:SortedSet:update", data1)
+        z.update(data2)
+        self.assertListEqual(list(z), ["xuzzy", "baz", "zaz", "foo", "bar"])
+
+    def test_range_by_score(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3),
+                 ("bam", 1.2), ("xuzzy", 0.2), ("zaz", 0.4))
+        z = self.client.SortedSet("test:SortedSet:range_by_score", data)
+        self.assertListEqual(z.range_by_score(0.3, 1.0), [
+                                "baz", "zaz", "foo"])
