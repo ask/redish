@@ -78,6 +78,8 @@ setup(
     zip_safe=False,
     test_suite="nose.collector",
     install_requires=[
+        "anyjson",
+        "redis",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
