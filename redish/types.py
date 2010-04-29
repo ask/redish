@@ -184,8 +184,12 @@ class Set(Type):
 class SortedSet(Type):
     """A sorted set."""
 
-    def __getslice__(self, i, j):
-        """``x.__getslice__(start, stop) <==> x[start:stop]``"""
+    def __getitem__(self, s):
+        if isinstance(s, slice):
+            i = s.start or 0
+            j = s.stop or -1
+        else:
+            i = j = s
         return self.client.zrange(self.name, i, j)
 
     def __len__(self):
@@ -214,13 +218,13 @@ class SortedSet(Type):
         """Increment the score of ``member`` by ``amount``."""
         return self.client.zincrby(self.name, member, amount)
 
-    def rank(self):
+    def rank(self, member):
         """Rank the set with scores being ordered from low to high."""
-        return self.client.zrank(self.name)
+        return self.client.zrank(self.name, member)
 
-    def reverse_rank(self):
+    def reverse_rank(self, member):
         """Rank the set with scores being ordered from high to low."""
-        return self.client.zrevrank(self.name)
+        return self.client.zrevrank(self.name, member)
 
     def score(self, member):
         """Return the score associated with the specified member."""
@@ -675,11 +679,11 @@ class ZSet(object):
         self._dict[member] += amount
         return self._dict[member]
     
-    def rank(self):
+    def rank(self, member):
         """Rank the set with scores being ordered from low to high."""
         return self._as_set()
     
-    def reverse_rank(self):
+    def reverse_rank(self, member):
         """Rank the set with scores being ordered from high to low."""
         return list(reversed(self._as_set()))
     
