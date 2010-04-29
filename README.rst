@@ -93,6 +93,15 @@ Braindump::
     >>> list(s)
     ['opera', 'ie', 'firefox']
     
+    # N.B. Assignment copies by value.
+    >>> x["game"] = x["set"]
+    >>> x["game"].add("mobilesafari")
+    True
+    >>> x["game"]
+    set(['opera', 'ie', 'firefox', 'mobilesafari'])
+    >>> x["set"]
+    set(['opera', 'ie', 'firefox'])
+    
     # Sorted Set (Local and Remote)
     >>> from redish.types import ZSet
     >>> zs = ZSet({'c': 3, 'b': 2, 'a': 1})
@@ -108,15 +117,6 @@ Braindump::
     >>> x["zs"].remove("c")
     >>> x["zs"].items()
     [('a', 1.0), ('b', 2.0)]
-    
-    # N.B. Assignment copies by value.
-    >>> x["game"] = x["set"]
-    >>> x["game"].add("mobilesafari")
-    True
-    >>> x["game"]
-    set(['opera', 'ie', 'firefox', 'mobilesafari'])
-    >>> x["set"]
-    set(['opera', 'ie', 'firefox'])
     
     # Proxy object retains all the normal methods from Redis object
     >>> x.keys()
