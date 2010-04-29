@@ -1,5 +1,7 @@
 from Queue import Empty, Full
 
+from redis.exceptions import ResponseError
+
 from redish.utils import maybe_list, key
 
 
@@ -21,23 +23,21 @@ class List(Type):
         super(List, self).__init__(name, client)
         self.extend(initial or [])
 
-    def extend(self, iterable):
-        """Append the values in ``iterable`` to this list."""
-        for value in iterable:
-            self.append(value)
-
-    def extendleft(self, iterable):
-        """Add the values in ``iterable`` to the head of this list."""
-        for value in iterable:
-            self.appendleft(value)
-
     def __getitem__(self, index):
         """``x.__getitem__(index) <==> x[index]``"""
-        return self.client.lindex(self.name, index)
+        item = self.client.lindex(self.name, index)
+        if item:
+            return item
+        raise IndexError("list index out of range")
 
     def __setitem__(self, index, value):
         """``x.__setitem__(index, value) <==> x[index] = value``"""
-        return self.client.lset(self.name, index, value)
+        try:
+            self.client.lset(self.name, index, value)
+        except ResponseError, exc:
+            if "index out of range" in exc.args:
+                raise IndexError("list assignment index out of range")
+            raise
 
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
@@ -53,6 +53,9 @@ class List(Type):
 
     def __getslice__(self, i, j):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
+        # Redis indices are zero-based, while Python indices are 1-based.
+        if j != -1:
+            j -= 1
         return self.client.lrange(self.name, i, j)
 
     def _as_list(self):
@@ -68,7 +71,7 @@ class List(Type):
 
     def trim(self, start, stop):
         """Trim the list to the specified range of elements."""
-        return self.client.ltrim(self.name, start, stop)
+        return self.client.ltrim(self.name, start, stop - 1)
 
     def pop(self):
         """Remove and return the last element of the list."""
@@ -89,6 +92,16 @@ class List(Type):
         if not count:
             raise ValueError("%s not in list" % value)
         return count
+
+    def extend(self, iterable):
+        """Append the values in ``iterable`` to this list."""
+        for value in iterable:
+            self.append(value)
+
+    def extendleft(self, iterable):
+        """Add the values in ``iterable`` to the head of this list."""
+        for value in iterable:
+            self.appendleft(value)
 
 
 class Set(Type):
@@ -205,10 +218,9 @@ class SortedSet(Type):
         for member, score in iterable:
             self.add(member, score)
 
-
-    def __getslice__(self, i, j):
+    def __getslice__(self, start, stop):
         """``x.__getslice__(start, stop) <==> x[start:stop]``"""
-        return self.client.zrange(self.name, i, j)
+        return self.client.zrange(self.name, start, stop)
 
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
@@ -231,6 +243,9 @@ class SortedSet(Type):
         """Remove member."""
         if not self.client.zrem(self.name, member):
             raise KeyError(member)
+
+    def revrange(self, start, stop):
+        return self.client.zrevrange(self.name, start, stop)
 
     def increment(self, member, amount=1):
         """Increment the score of ``member`` by ``amount``."""
