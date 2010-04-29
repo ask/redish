@@ -370,3 +370,93 @@ class test_Dict(ClientTestCase):
         d = self.client.Dict("test:Dict:update", data2)
         d.update(data1)
         self.assertDictContainsSubset(data1, dict(d))
+
+
+
+class QueueCase(ClientTestCase):
+
+    def setUp(self):
+        super(QueueCase, self).setUp()
+        self.setUpQueue()
+
+    def setUpQueue(self):
+        self.qtype = None
+
+    def test_empty(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:empty")
+        self.assertTrue(q.empty())
+        q.put("foo")
+        self.assertFalse(q.empty())
+
+    def test_full(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:full:1", maxsize=None)
+        self.assertFalse(q.full())
+
+        q2 = self.qtype("test:Queue:full:2", maxsize=10)
+        [q2.put(i) for i in map(str, range(10))]
+        self.assertTrue(q2.full())
+
+    def test_put_get(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:put_get")
+        q.put("foo")
+        self.assertEqual(q.get_nowait(), "foo")
+
+    def test_get_nowait_raises_Empty(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:get_raises_Empty")
+        with self.assertRaises(q.Empty):
+            q.get_nowait()
+
+    def test_put_raises_Full(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:put_raises_Full", maxsize=3)
+        q.put("foo")
+        q.put("bar")
+        q.put("baz")
+        self.assertTrue(q.full())
+        with self.assertRaises(q.Full):
+            q.put("xuzzy")
+
+    def test_qsize(self):
+        if not self.qtype:
+            return
+        q = self.qtype("test:Queue:qsize")
+        self.assertEqual(q.qsize(), 0)
+        [q.put(i) for i in range(100)]
+        self.assertEqual(q.qsize(), 100)
+
+
+class test_Queue(QueueCase):
+
+    def setUpQueue(self):
+        self.qtype = self.client.Queue
+
+    def test_is_FIFO(self):
+        items = ("foo", "bar", "baz")
+        q = self.qtype("test:Queue:is_FIFO")
+        for item in items:
+            q.put(item)
+        for item in items:
+            self.assertEqual(q.get_nowait(), item)
+
+
+class test_LifoQueue(QueueCase):
+
+    def setUpQueue(self):
+        self.qtype = self.client.LifoQueue
+
+    def test_is_LIFO(self):
+        items = ("foo", "bar", "baz")
+        q = self.qtype("test:Queue:is_LIFO")
+        for item in items:
+            q.put(item)
+        for item in reversed(items):
+            self.assertEqual(q.get_nowait(), item)

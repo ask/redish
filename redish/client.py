@@ -67,23 +67,24 @@ class Client(object):
         """
         return types.Dict(name, self.api, initial=initial, **extra)
 
-    def Queue(self, name, initial=None):
+    def Queue(self, name, initial=None, maxsize=None):
         """The queue datatype.
 
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
 
         """
-        return types.Queue(name, self.api, initial=initial)
+        return types.Queue(name, self.api, initial=initial, maxsize=maxsize)
 
-    def LIFOQueue(self, name, initial=None):
+    def LifoQueue(self, name, initial=None, maxsize=None):
         """The LIFO queue datatype.
 
         :param name: The name of the queue.
         :keyword initial: Initial items in the queue.
 
         """
-        return types.LIFOQueue(name, self.api, initial=initial)
+        return types.LifoQueue(name, self.api,
+                               initial=initial, maxsize=maxsize)
 
     def prepare_value(self, value):
         """Encode python object to be stored in the database."""

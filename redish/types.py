@@ -393,6 +393,9 @@ class Dict(Type):
 class Queue(Type):
     """FIFO Queue."""
 
+    Empty = Empty
+    Full = Full
+
     def __init__(self, name, client, initial=None, maxsize=0):
         super(Queue, self).__init__(name, client)
         self.list = List(name, client, initial)
@@ -413,7 +416,7 @@ class Queue(Type):
         Only applicable if :attr:`maxsize` is set.
 
         """
-        return self.maxsize and len(self.list) > self.maxsize
+        return self.maxsize and len(self.list) >= self.maxsize or False
 
     def get(self, block=True, timeout=None):
         """Remove and return an item from the queue.
