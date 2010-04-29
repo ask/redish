@@ -1,4 +1,4 @@
-redish Documentation
+Redish Documentation
 ==================================
 
 Contents:
@@ -7,6 +7,7 @@ Contents:
     :maxdepth: 3
 
     introduction
+    reference/index
     changelog
 
 

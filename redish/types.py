@@ -6,6 +6,7 @@ from redish.utils import mkey
 
 
 class Type(object):
+    """Base-class for Redis datatypes."""
 
     def __init__(self, name, client):
         self.name = mkey(name)
@@ -13,6 +14,7 @@ class Type(object):
 
 
 def Id(name, client):
+    """Return the next value for an unique id."""
     return "%s:%s" % (name, client.incr("ids:%s" % (name, )), )
 
 
@@ -237,6 +239,7 @@ class SortedSet(Type):
             raise KeyError(member)
 
     def revrange(self, start=0, stop=-1):
+        stop = stop is None and -1 or stop
         return self.client.zrevrange(self.name, start, stop)
 
     def increment(self, member, amount=1):
@@ -268,8 +271,8 @@ class SortedSet(Type):
         return self.client.zrange(self.name, 0, -1)
 
 
-
 class Dict(Type):
+    """A dictionary."""
 
     def __init__(self, name, client, initial=None, **extra):
         super(Dict, self).__init__(name, client)
