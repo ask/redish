@@ -93,6 +93,22 @@ Braindump::
     >>> list(s)
     ['opera', 'ie', 'firefox']
     
+    # Sorted Set (Local and Remote)
+    >>> from redish.types import ZSet
+    >>> zs = ZSet({'c': 3, 'b': 2, 'a': 1})
+    >>> zs
+    ['a', 'b', 'c']
+    >>> zs[-1]
+    'c'
+    >>> x["zs"] = zs
+    >>> x["zs"].rank("a")
+    0
+    >>> x["zs"].range_by_score(2,3)
+    ['b', 'c']
+    >>> x["zs"].remove("c")
+    >>> x["zs"].items()
+    [('a', 1.0), ('b', 2.0)]
+    
     # N.B. Assignment copies by value.
     >>> x["game"] = x["set"]
     >>> x["game"].add("mobilesafari")

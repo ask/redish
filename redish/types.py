@@ -213,7 +213,11 @@ class SortedSet(Type):
         """Remove member."""
         if not self.client.zrem(self.name, member):
             raise KeyError(member)
-
+    
+    def discard(self, member):
+        """Discard member."""
+        self.client.zrem(self.name, member)
+    
     def increment(self, member, amount=1):
         """Increment the score of ``member`` by ``amount``."""
         return self.client.zincrby(self.name, member, amount)
