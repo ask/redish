@@ -17,7 +17,7 @@ Braindump::
     >>> from redish.proxy import Proxy
     >>> x = Proxy()
 
-    # Key/Value
+    # Key/Value with strings
     >>> x["foo"] = "bar"
     >>> x["foo"]
     'bar'
@@ -48,10 +48,12 @@ Braindump::
     4
     # Don't get tripped up on assignment:
     >>> z = 5
-    >>> z
-    5
     >>> x["z"]
     4
+    >>> z
+    5
+    >>> z.__class__
+    <type 'int'>
     
 
     # Dict
@@ -102,7 +104,7 @@ Braindump::
     
     # Proxy object retains all the normal methods from Redis object
     >>> x.keys()
-    ['dictionary', 'Liszt', 'set', 'game', 'z']
+    ['z', 'dictionary', 'Liszt', 'set', 'game']
     >>> x.bgsave()
     True
     

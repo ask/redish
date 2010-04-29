@@ -25,6 +25,9 @@ def int_or_str(thing, key, client):
         return decode(thing, "UTF-8")
 
 class Proxy(Redis):
+    """Acts as the Redis object except with basic item access or assignment.
+    In those cases, transparently returns an object that mimics its 
+    associated Python type or passes assignments to the backing store."""
     def __getitem__(self, key):
         typ = self.type(key)
         if typ == 'none':
@@ -52,5 +55,8 @@ class Proxy(Redis):
                 pline = pline.sadd(key, item)
         elif isinstance(value, (dict, types.Dict)):
             pline = pline.hmset(key, value)
+        elif isinstance(value, (types.ZSet, types.SortedSet)):
+            for k,v in value.items():
+                pline = pline.zadd(key, k, v)
         pline.execute()
     

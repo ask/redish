@@ -1,7 +1,7 @@
 from Queue import Empty, Full
 
 from redish.utils import maybe_list, key
-
+import bisect
 
 class Type(object):
 
@@ -233,6 +233,9 @@ class SortedSet(Type):
 
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
+    
+    def items(self):
+        return self.client.zrange(self.name, 0, -1, withscores=True)
 
 
 
@@ -621,4 +624,78 @@ class Int(Type):
     
     def __repr__(self):
         return repr(int(self))
+    
+
+def is_zsettable(s):
+    """quick check that all values in a dict are reals"""
+    return all(map(lambda x: isinstance(x, (int, float, long)), s.values()))
+
+class ZSet(object):
+    """The simplest local implementation to Redis's Sorted Set imaginable.
+    Little thought given to performance, simply get the basic implementation
+    right."""
+    def __init__(self, initial={}):
+        if not is_zsettable(initial):
+            raise ValueError(initial)
+        self._dict = initial
+    
+    def items(self):
+        return sorted(self._dict.items(), key=lambda x: (x[1], x[0]))
+    
+    def __getitem__(self, s):
+        return self._as_set()[s]
+    
+    def __len__(self):
+        """``x.__len__() <==> len(x)``"""
+        return len(self._dict)
+    
+    def __iter__(self):
+        """``x.__iter__() <==> iter(x)``"""
+        return iter(self._as_set())
+    
+    def __repr__(self):
+        """``x.__repr__() <==> repr(x)``"""
+        return repr(self._as_set())
+    
+    def add(self, member, score):
+        """Add the specified member to the sorted set, or update the score
+        if it already exist."""
+        self._dict[member] = score
+    
+    def remove(self, member):
+        """Remove member."""
+        del self._dict[member]
+    
+    def discard(self, member):
+        if member in self._dict:
+            del self._dict[member]
+    
+    def increment(self, member, amount=1):
+        """Increment the score of ``member`` by ``amount``."""
+        self._dict[member] += amount
+        return self._dict[member]
+    
+    def rank(self):
+        """Rank the set with scores being ordered from low to high."""
+        return self._as_set()
+    
+    def reverse_rank(self):
+        """Rank the set with scores being ordered from high to low."""
+        return list(reversed(self._as_set()))
+    
+    def score(self, member):
+        """Return the score associated with the specified member."""
+        return self._dict[member]
+    
+    def range_by_score(self, min, max):
+        """Return all the elements with score >= min and score <= max
+        (a range query) from the sorted set."""
+        data = self.items()
+        keys = [r[1] for r in data] 
+        start = bisect.bisect_left(keys, min)
+        end = bisect.bisect_right(keys, max, start)
+        return self._as_set()[start:end]
+    
+    def _as_set(self):
+        return map(lambda x: x[0], self.items())
     
