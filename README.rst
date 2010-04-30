@@ -20,7 +20,7 @@ Braindump::
     # Key/Value with strings
     >>> x["foo"] = "bar"
     >>> x["foo"]
-    'bar'
+    u'bar'
     >>> del(x["foo"])
     >>> x["foo"]
     Traceback (most recent call last):

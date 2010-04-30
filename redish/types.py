@@ -482,6 +482,7 @@ class LifoQueue(Queue):
 
 
 class Int(Type):
+    """Sigh."""
     def __add__(self, other):
         return int.__add__(self.__int__(), other)
     
