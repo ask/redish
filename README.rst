@@ -149,6 +149,105 @@ Get the number of keys present in the database::
     >>> len(db)
     1
 
+Lists
+=====
+
+**Note:** Lists does not currently support storing serialized objects.
+
+Create a new list with key ``mylist``, and initial items::
+
+    >>> l = db.List("mylist", ["Jerry", "George"])
+
+Get items in the list as a Python ``list``::
+
+    >>> list(l)
+    ['Jerry', 'George']
+
+Add item at the end of the list::
+
+    >>> l.append("Kramer")
+    >>> list(l)
+    ['Jerry', 'George', 'Kramer']
+
+Add item to the head of the list::
+
+    >>> l.appendleft("Elaine")
+    >>> list(l)
+    ['Elaine', 'Jerry', George', 'Kramer']
+
+Get item at index (zero based)::
+
+    >>> l[2]
+    'George'
+
+Check if a value is in the list using the ``in`` operator::
+
+    >>> "George" in l
+    True
+
+    >>> "Soup-nazi" in l
+    False
+
+``pop`` removes and returns the last element of the list::
+
+    >>> list(l)
+    ['Elaine', 'Jerry', 'George', 'Kramer']
+    >>> l.pop()
+    'Kramer'
+    >>> list(l)
+    ['Elaine', 'Jerry', 'George']
+
+``popleft`` removes and returns the head of the list::
+
+    >>> l.popleft()
+    'Elaine'
+    >>> list(l)
+    ['Jerry', 'George']
+
+Get the number of items in the list::
+
+    >>> len(l)
+    2
+
+``extend`` adds another list to the end of the list::
+
+    >>> l.extend(["Elaine", "Kramer"])
+    >>> list(l)
+    ['Jerry', 'George', 'Elaine', 'Kramer']
+
+``extendleft`` adds another list to the head of the list::
+
+    >>> l.extendleft(["Soup-nazi", "Art"])
+    >>> list(l)
+    ['Art', 'Soup-nazi', 'Jerry', 'George', 'Elaine', 'Kramer']
+
+Get slice of list::
+
+    >>> l[2:4]
+    ['Jerry', 'George']
+
+Iterate over the lists items::
+
+    >>> it = iter(l)
+    >>> it.next()
+    'Art'
+
+``remove`` finds and removes one or more occurences of ``value`` from the
+list::
+
+    >>> l.remove("Soup-nazi", count=1)
+    1
+    >>> list(l)
+    ['Art', 'Jerry', 'George', 'Elaine', 'Kramer']
+
+``trim`` trims the list to the range in ``start``, ``stop``::
+
+    >>> l[2:4]
+    ['George', 'Elaine']
+    >>> l.trim(start=2, stop=4)
+    >>> list(l)
+    ['George', 'Elaine']
+
 Sets
 ====
 
