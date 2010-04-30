@@ -27,20 +27,48 @@ Serializers
 -----------
 
 Clients can be configured to automatically serialize and deserialize values.
-There are three serializers shipped with ``redish``: ``Plain``, ``Pickler``
-and ``JSON``::
+There are three serializers shipped with ``redish``:
 
-    >>> from redish.serialization import Plain, Pickler, JSON
+* ``Plain``
 
-    >>> db = Client(serializer=Plain())
-    >>> db = Client(serializer=Pickler())
-    >>> db = Client(serializer=JSON())
+The plain serializer does not serialize values, but does still support
+compression using the ``encoding`` argument.
+
+Note that this means you can only store string values in keys.
+
+Example::
+
+    >>> from redish import serialization
+    >>> db = Client(serializer=serialization.Plain())
+
+* ``Pickler``
+
+Uses :mod:`pickle` to serialize Python objects. This can store any object that
+can be pickled (i.e. not lambdas and objects not resolving back to a module).
+
+Example::
+
+    >>> from redish import serialization
+    >>> db = Client(serializer=serialization.Pickler())
+* ``JSON``::
+
+Stores values in JSON format. This supports lists, dicts, strings, numbers,
+and floats. Complex Python objects can not be stored using JSON. The upside
+is that it is commonly supported by other languages and platforms.
+
+Example::
+
+    >>> from redish import serialization
+    >>> db = Client(serializer=serialization.JSON())
+
+Compression
+~~~~~~~~~~~
 
 In addition these serializers can also be configured to do
 compression::
 
     # Using zlib compression
-    >>> db = Client(serializer=Pickler(encoding="zlib"))
+    >>> db = Client(serializer=serialization.Pickler(encoding="zlib"))
 
 
 Working with keys and values
