@@ -8,7 +8,7 @@ key-value storage, use item access as a means to obtain proxy objects for
 structures in the redis store. The proxy objects are obtained from
 redish.types -- no other redish modules are used.
 
-This provides as simple access as possible to redis as a "data structure"
+This provides as simple access as possible to Redis as a "data structure"
 server.
 
 (originally by Adam T. Lindsay)

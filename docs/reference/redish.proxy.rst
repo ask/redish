@@ -1,5 +1,5 @@
 ==========================
- redish.proxy
+ Proxy - redish.proxy
 ==========================
 
 .. currentmodule:: redish.proxy

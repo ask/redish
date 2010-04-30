@@ -2,7 +2,7 @@ Accessing Redis via the Proxy object
 ====================================
 
 By mixing the type system from redish with the original redis-py's Redis
-object, the :doc:`reference/redish.proxy` module gives a different kind of access to the
+object, the :doc:`redish.proxy </reference/redish.proxy>` module gives a different kind of access to the
 key-value store without pickling/unpickling and by respecting the strengths in
 Redis's types. In other words, it transparently exposes Redis as a data
 structure server.
