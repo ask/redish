@@ -118,7 +118,7 @@ class Set(Type):
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
-        return "<Set: %s"> % (repr(list(self._as_set())), )
+        return "<Set: %s>" % (repr(list(self._as_set())), )
 
     def __contains__(self, member):
         """``x.__contains__(member) <==> member in x``"""
@@ -226,7 +226,7 @@ class SortedSet(Type):
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
-        return repr(self._as_set())
+        return "<SortedSet: %s>" % (repr(list(self._as_set())), )
 
     def add(self, member, score):
         """Add the specified member to the sorted set, or update the score

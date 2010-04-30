@@ -8,12 +8,8 @@ Introduction
 ============
 
 
-Examples
-========
-
-
 The client
-----------
+==========
 
 A connection to a database is represented by the ``redish.client.Client`` class::
 
@@ -24,7 +20,7 @@ A connection to a database is represented by the ``redish.client.Client`` class:
     <RedisClient: localhost:6379/>
 
 Serializers
------------
+===========
 
 Clients can be configured to automatically serialize and deserialize values.
 There are three serializers shipped with ``redish``:
@@ -43,13 +39,14 @@ Example::
 
 * ``Pickler``
 
-Uses :mod:`pickle` to serialize Python objects. This can store any object that
-can be pickled (i.e. not lambdas and objects not resolving back to a module).
+Uses the ``pickle`` module to serialize Python objects. This can store any object
+except lambdas or objects not resolving back to a module.
 
 Example::
 
     >>> from redish import serialization
     >>> db = Client(serializer=serialization.Pickler())
+
 * ``JSON``::
 
 Stores values in JSON format. This supports lists, dicts, strings, numbers,
@@ -62,7 +59,7 @@ Example::
     >>> db = Client(serializer=serialization.JSON())
 
 Compression
-~~~~~~~~~~~
+-----------
 
 In addition these serializers can also be configured to do
 compression::
@@ -72,7 +69,7 @@ compression::
 
 
 Working with keys and values
-----------------------------
+============================
 
 Set a value::
 
@@ -153,7 +150,7 @@ Get the number of keys present in the database::
     1
 
 Sets
-----
+====
 
 Create a new set with the key ``myset``, and initial members
 ``"Jerry"`` and ``"George"``::
@@ -210,7 +207,7 @@ Update the set with the union of another::
     <Set: ['Jason', 'Michael', 'Jerry', 'Julia', 'George']>
 
 Sorted sets
------------
+===========
 
 Create a new sorted set with the key ``myzset``, and initial members::
 
@@ -310,8 +307,3 @@ by doing the following,::
 
     $ python setup.py build
     # python setup.py install # as root
-
-Examples
-========
-
-.. Please write some examples using your package here.
