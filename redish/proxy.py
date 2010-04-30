@@ -1,7 +1,7 @@
 """
-proxy.py
-
-Created by Adam T. Lindsay on 2010-04-28.
+.. module:: proxy.py
+   :synopsis: Transparent access to Redis as a data structure server
+.. moduleauthor:: Adam T. Lindsay <http://github.com/atl>
 
 Rather than use the native redis-py's methods for getitem/setitem as simple
 key-value storage, use item access as a means to obtain proxy objects for
@@ -11,6 +11,7 @@ redish.types -- no other redish modules are used.
 This provides as simple access as possible to redis as a "data structure"
 server.
 
+(originally by Adam T. Lindsay)
 """
 from codecs import encode, decode
 from redis import Redis

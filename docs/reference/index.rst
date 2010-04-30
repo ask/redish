@@ -11,6 +11,7 @@
     redish.client
     redish.types
     redish.models
+    redish.proxy
     redish.serialization
     redish.utils
 
