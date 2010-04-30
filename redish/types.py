@@ -118,7 +118,7 @@ class Set(Type):
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
-        return repr(self._as_set())
+        return "<Set: %s>" % (repr(list(self._as_set())), )
 
     def __contains__(self, member):
         """``x.__contains__(member) <==> member in x``"""
@@ -186,13 +186,13 @@ class Set(Type):
         """Update the set with the intersection of itself and another."""
         return self.client.sinterstore(self.name, [self.name, other.name])
 
-    def difference(self, other):
-        """Return the difference of two or more sets as a new set.
+    def difference(self, others):
+        """Return the difference of two or more sets as a new :class:`set`.
 
         (i.e. all elements that are in this set but not the others.)
 
         """
-        return self.client.sdiff([self.name, other.name])
+        return self.client.sdiff([self.name] + [other.name for other in others])
 
     def difference_update(self, other):
         """Remove all elements of another set from this set."""
@@ -230,7 +230,7 @@ class SortedSet(Type):
 
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
-        return repr(self._as_set())
+        return "<SortedSet: %s>" % (repr(list(self._as_set())), )
 
     def add(self, member, score):
         """Add the specified member to the sorted set, or update the score
