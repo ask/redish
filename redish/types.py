@@ -482,90 +482,97 @@ class LifoQueue(Queue):
 
 
 class Int(Type):
-    """Sigh."""
+    """In order to mimic an int, we reimplement all its methods with
+    all values accessing the backing store.
+    
+    These flip-flopping definitions are a 'convenient' way to mix Ints
+    with types that are not int (including itself).
+    
+    I am not at all convinced this was worth it.
+    """
     def __add__(self, other):
-        return int.__add__(self.__int__(), other)
+        return type(other).__radd__(other, self.__int__())
     
     def __sub__(self, other):
-        return int.__sub__(self.__int__(), other)
+        return type(other).__rsub__(other, self.__int__())
     
     def __mul__(self, other):
-        return int.__mul__(self.__int__(), other)
+        return type(other).__rmul__(other, self.__int__())
     
     def __div__(self, other):
-        return int.__div__(self.__int__(), other)
+        return type(other).__rdiv__(other, self.__int__())
     
     def __truediv__(self, other):
-        return int.__truediv__(self.__int__(), other)
+        return type(other).__rtruediv__(other, self.__int__())
     
     def __floordiv__(self, other):
-        return int.__floordiv__(self.__int__(), other)
+        return type(other).__rfloordiv__(other, self.__int__())
     
     def __mod__(self, other):
-        return int.__mod__(self.__int__(), other)
+        return type(other).__rmod__(other, self.__int__())
     
     def __divmod__(self, other):
-        return int.__divmod__(self.__int__(), other)
+        return type(other).__rdivmod__(other, self.__int__())
     
-    def __pow__(self, *args):
-        return int.__pow__(self.__int__(), *args)
+    def __pow__(self, other):
+        return type(other).__rpow__(other, self.__int__())
     
     def __lshift__(self, other):
-        return int.__lshift__(self.__int__(), other)
+        return type(other).__rlshift__(other, self.__int__())
     
     def __rshift__(self, other):
-        return int.__rshift__(self.__int__(), other)
+        return type(other).__rrshift__(other, self.__int__())
     
     def __and__(self, other):
-        return int.__and__(self.__int__(), other)
+        return type(other).__rand__(other, self.__int__())
     
     def __or__(self, other):
-        return int.__or__(self.__int__(), other)
+        return type(other).__ror__(other, self.__int__())
     
     def __xor__(self, other):
-        return int.__xor__(self.__int__(), other)
+        return type(other).__rxor__(other, self.__int__())
     
     def __radd__(self, other):
-        return int.__radd__(self.__int__(), other)
+        return type(other).__add__(other, self.__int__())
     
     def __rsub__(self, other):
-        return int.__rsub__(self.__int__(), other)
+        return type(other).__sub__(other, self.__int__())
     
     def __rmul__(self, other):
-        return int.__rmul__(self.__int__(), other)
+        return type(other).__mul__(other, self.__int__())
     
     def __rdiv__(self, other):
-        return int.__rdiv__(self.__int__(), other)
+        return type(other).__div__(other, self.__int__())
     
     def __rtruediv__(self, other):
-        return int.__rtruediv__(self.__int__(), other)
+        return type(other).__truediv__(other, self.__int__())
     
     def __rfloordiv__(self, other):
-        return int.__rfloordiv__(self.__int__(), other)
+        return type(other).__floordiv__(other, self.__int__())
     
     def __rmod__(self, other):
-        return int.__rmod__(self.__int__(), other)
+        return type(other).__mod__(other, self.__int__())
     
     def __rdivmod__(self, other):
-        return int.__rdivmod__(self.__int__(), other)
+        return type(other).__divmod__(other, self.__int__())
     
-    def __rpow__(self, *args):
-        return int.__pow__(self.__int__(), *args)
+    def __rpow__(self, other):
+        return type(other).__pow__(other, self.__int__())
     
     def __rlshift__(self, other):
-        return int.__lshift__(self.__int__(), other)
+        return type(other).__lshift__(other, self.__int__())
     
     def __rrshift__(self, other):
-        return int.__rshift__(self.__int__(), other)
+        return type(other).__shift__(other, self.__int__())
     
     def __rand__(self, other):
-        return int.__and__(self.__int__(), other)
+        return type(other).__and__(other, self.__int__())
     
     def __ror__(self, other):
-        return int.__or__(self.__int__(), other)
+        return type(other).__or__(other, self.__int__())
     
     def __rxor__(self, other):
-        return int.__xor__(self.__int__(), other)
+        return type(other).__xor__(other, self.__int__())
     
     def __iadd__(self, other):
         self.client.incr(self.name, other)

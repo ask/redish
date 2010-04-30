@@ -1,9 +1,15 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
 proxy.py
 
 Created by Adam T. Lindsay on 2010-04-28.
+
+Rather than use the native redis-py's methods for getitem/setitem as simple
+key-value storage, use item access as a means to obtain proxy objects for
+structures in the redis store. The proxy objects are obtained from
+redish.types -- no other redish modules are used.
+
+This provides as simple access as possible to redis as a "data structure"
+server.
 
 """
 from codecs import encode, decode
@@ -28,7 +34,10 @@ class Proxy(Redis):
     """Acts as the Redis object except with basic item access or assignment.
     In those cases, transparently returns an object that mimics its 
     associated Python type or passes assignments to the backing store."""
+    
     def __getitem__(self, key):
+        """Return a proxy type according to the native redis type 
+        associated with the key."""
         typ = self.type(key)
         if typ == 'none':
             raise KeyError(key)
@@ -38,6 +47,7 @@ class Proxy(Redis):
             return TYPE_MAP[typ](key, self)
     
     def __setitem__(self, key, value):
+        """Copy the contents of the value into the redis store."""
         if isinstance(value, (int, types.Int)):
             self.set(key, int(value))
             return
