@@ -220,6 +220,7 @@ class SortedSet(Type):
         if isinstance(s, slice):
             i = s.start or 0
             j = s.stop or -1
+            j = j - 1
         else:
             i = j = s
         return self.client.zrange(self.name, i, j)
