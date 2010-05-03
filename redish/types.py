@@ -186,7 +186,7 @@ class Set(Type):
         """Update the set with the intersection of itself and another."""
         return self.client.sinterstore(self.name, [self.name, other.name])
 
-    def difference(self, others):
+    def difference(self, *others):
         """Return the difference of two or more sets as a new :class:`set`.
 
         (i.e. all elements that are in this set but not the others.)
@@ -362,17 +362,21 @@ class Dict(Type):
             self[key] = default
             return default
 
-    def pop(self, key, default=None):
+    def pop(self, key, *args, **kwargs):
         """Remove specified key and return the corresponding value.
 
-        If key is not found, ``default`` is returned if given,
-        otherwise :exc:`KeyError` is raised.
+        :keyword default: If key is not found, ``default`` is returned if given,
+            otherwise :exc:`KeyError` is raised.
 
         """
         try:
             val = self[key]
         except KeyError:
-            val = default
+            if len(args):
+                return args[0]
+            if "default" in kwargs:
+                return kwargs["default"]
+            raise
 
         try:
             del(self[key])

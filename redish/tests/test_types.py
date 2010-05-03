@@ -8,7 +8,7 @@ from redish.tests.test_client import ClientTestCase
 class test_List(ClientTestCase):
 
     def test_get_set_item(self):
-        names = ("George Constanza", "Jerry Seinfeld",
+        names = ("George Costanza", "Jerry Seinfeld",
                  "Kosmo Kramer", "Elaine Marie Benes")
         l = self.client.List("test:List:get_set_item", names)
         for i, name in enumerate(names):
@@ -314,10 +314,10 @@ class test_SortedSet(ClientTestCase):
 class test_Dict(ClientTestCase):
 
     def test__init__(self):
-        data = {"name": "George Constanza"}
+        data = {"name": "George Costanza"}
         d = self.client.Dict("test:Dict:__init__", data,
                              company="Vandelay Industries")
-        self.assertEqual(d["name"], "George Constanza")
+        self.assertEqual(d["name"], "George Costanza")
         self.assertEqual(d["company"], "Vandelay Industries")
 
     def test__missing__(self):
@@ -399,16 +399,23 @@ class test_Dict(ClientTestCase):
 
     def test_pop(self):
         d = self.client.Dict("test:Dict:pop", foo="bar")
-        self.assertIsNone(d.pop("nonexistent"))
+        self.assertIsNone(d.pop("nonexistent", None))
+        self.assertIsNone(d.pop("nonexistent", default=None))
         self.assertEqual(d.pop("nonexistent", "12345"), "12345")
+        self.assertEqual(d.pop("nonexistent", default="12345"), "12345")
+
+        with self.assertRaises(KeyError):
+            d.pop("nonexistent")
+
         self.assertEqual(d.pop("foo"), "bar")
-        self.assertIsNone(d.pop("foo"))
+        with self.assertRaises(KeyError):
+            d.pop("foo")
 
         with self.assertRaises(KeyError):
             d["foo"]
 
     def test_update(self):
-        data1 = {"George Constanza": "architect",
+        data1 = {"George Costanza": "architect",
                  "Jerry Seinfeld": "comedian"}
         data2 = {"Elaine Marie Benes": "assistant"}
         d = self.client.Dict("test:Dict:update", data2)

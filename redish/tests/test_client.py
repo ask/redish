@@ -124,9 +124,9 @@ class test_Client(ClientTestCase):
             self.client.pop("test:pop")
 
     def test_get(self):
-        self.client["test:get:exists"] = "George Constanza"
+        self.client["test:get:exists"] = "George Costanza"
         self.assertEqual(self.client.get("test:get:exists"),
-                         "George Constanza")
+                         "George Costanza")
         self.assertIsNone(self.client.get("test:get:nonexistent"))
         self.assertEqual(self.client.get("test:get:nonexistent", 12345),
                          12345)
