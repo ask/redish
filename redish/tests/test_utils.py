@@ -26,10 +26,10 @@ class test_utils(unittest.TestCase):
 
     def test_dt_to_timestamp(self):
         dt = datetime(2010, 4, 29, 13, 49, 34, 112487)
-        self.assertEqual(utils.dt_to_timestamp(dt), 1272541774.0)
+        self.assertIsInstance(utils.dt_to_timestamp(dt), float)
 
     def test_maybe_datetime(self):
-        self.assertEqual(utils.maybe_datetime(
-                            datetime(2010, 4, 29, 13, 49, 34, 112487)),
-                         1272541774.0)
-        self.assertEqual(utils.maybe_datetime(1272541774.0), 1272541774.0)
+        self.assertIsInstance(utils.maybe_datetime(
+                                datetime(2010, 4, 29, 13, 49, 34, 112487)),
+                              float)
+        self.assertIsInstance(utils.maybe_datetime(1272541774.0), float)
