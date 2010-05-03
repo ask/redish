@@ -97,7 +97,7 @@ Python dictionaries; It raises the KeyError exception::
 
 Set many keys at the same time::
 
-    >>> db.update({"name": "George Constanza",
+    >>> db.update({"name": "George Costanza",
     ...            "company": "Vandelay Industries"})
 
 Get a list of keys in the database::
@@ -121,12 +121,15 @@ Get all items in the database (optionally matching a pattern)
 as a list of ``(key, value)`` tuples::
 
     >>> db.items(pattern="user:*")
-    [('user:company', 'Vandelay Industries'), ('user:name', 'George Constanza')]
+    [('user:company', 'Vandelay Industries'), ('user:name', 'George Costanza')]
 
 Get all values in the database (optionally where keys matches a pattern)::
 
     >>> db.values(pattern="user:*")
-    ['Vandelay Industries', 'George Constanza']
+    ['Vandelay Industries', 'George Costanza']
+
+Iterator versions of ``keys``, ``values`` and ``items`` are also available,
+as ``iterkeys``, ``itervalues``, ``iteritems`` respectively.
 
 Check for existence of a key in the database::
 
@@ -140,7 +143,7 @@ Check for existence of a key in the database::
 Get and remove key from the database (atomic operation)::
 
     >>> db.pop("user:name")
-    'George Constanza'
+    'George Costanza'
     >>> "user:name" in db
     False
 
@@ -163,13 +166,13 @@ Get items in the list as a Python ``list``::
     >>> list(l)
     ['Jerry', 'George']
 
-Add item at the end of the list::
+``append`` adds items to the end of the list::
 
     >>> l.append("Kramer")
     >>> list(l)
     ['Jerry', 'George', 'Kramer']
 
-Add item to the head of the list::
+``appendleft`` prepends item to the head of the list::
 
     >>> l.appendleft("Elaine")
     >>> list(l)
@@ -247,6 +250,114 @@ list::
     >>> l.trim(start=2, stop=4)
     >>> list(l)
     ['George', 'Elaine']
+
+
+Dicts (Hashes)
+==============
+
+
+Create a new dictionary with initial content::
+
+    >>> d = db.Dict("mydict", {"name": "George Louis Costanza"})
+
+Get the value of key ``"name"``::
+
+    >>> d["name"]
+    'George Louis Costanza'
+
+Set store another key, ``"company"``::
+
+    >>> d["company"] = "Vandelay Industries"
+
+Check if a key exists in the dictionary, using the ``in`` operator::
+
+    >>> "company" in d
+    True
+
+Remove a key::
+
+    >>> del(d["company"])
+    >>> "company" in d
+    False
+
+Get a copy as a Python ``dict``::
+
+    >>> dict(d)
+    {'name': 'George Louis Costanza'}
+
+
+``update`` updates with the contents of a ``dict``
+(``x.update(y)`` does a merge where keys in ``y`` has precedence)::
+
+    >>> d.update({"mother": "Estelle Costanza",
+    ...           "father": "Frank Costanza"})
+
+    >>> dict(d)
+    {'name': 'George Louis Costanza',
+     'mother': 'Estelle Costanza',
+     'father': 'Frank Costanza'}
+
+
+Get the number of keys in the dictionary::
+
+    >>> len(d)
+    3
+
+``keys`` / ``iterkeys`` gives a list of the keys in the dictionary::
+
+    >>> d.keys()
+    ['name', 'father', 'mother']
+
+``values`` / ``itervalues`` gives a list of values in the dictionary::
+
+    >>> d.values()
+    ['George Louis Costanza', 'Frank Costanza', 'Estelle Costanza']
+
+``items`` / ``iteritems`` gives a list of ``(key, value)`` tuples
+of the items in the dictionary::
+
+    >>> d.items()
+    [('father', 'Frank Costanza'),
+     ('name', 'George Louis Costanza'),
+     ('mother', 'Estelle Costanza')]
+
+``setdefault`` returns the value of a key if present, otherwise stores a
+default value::
+
+    >>> d.setdefault("company", "Vandelay Industries")
+    'Vandelay Industries'
+    >>> d["company"] = "New York Yankees"
+    >>> d.setdefault("company", "Vandelay Industries")
+    'New York Yankees'
+
+``get(key, default=None)`` returns the value of a key if present, otherwise
+returns the default value::
+
+    >>> d.get("company")
+    "Vandelay Industries"
+
+    >>> d.get("address")
+    None
+
+``pop`` removes a key and returns its value. Also supports an extra
+parameters, which is the default value to return if the key does not exist::
+
+    >>> d.pop("company")
+    'New York Yankees'
+    >>> d.pop("company")
+    Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "redish/types.py", line 373, in pop
+            val = self[key]
+        File "redish/types.py", line 290, in __getitem__
+            raise KeyError(key)
+    KeyError: 'company'
+
+    # With default value, does not raise KeyError, but returns default value.
+    >>> d.pop("company", None)
+    None
+
+
 
 Sets
 ====
