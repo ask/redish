@@ -215,7 +215,7 @@ class SortedSet(Type):
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
         return iter(self._as_set())
-    
+
     def __getitem__(self, s):
         if isinstance(s, slice):
             i = s.start or 0
@@ -223,7 +223,7 @@ class SortedSet(Type):
         else:
             i = j = s
         return self.client.zrange(self.name, i, j)
-    
+
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
         return self.client.zcard(self.name)
@@ -246,11 +246,10 @@ class SortedSet(Type):
         stop = stop is None and -1 or stop
         return self.client.zrevrange(self.name, start, stop)
 
-    
     def discard(self, member):
         """Discard member."""
         self.client.zrem(self.name, member)
-    
+
     def increment(self, member, amount=1):
         """Increment the score of ``member`` by ``amount``."""
         return self.client.zincrby(self.name, member, amount)
@@ -278,7 +277,7 @@ class SortedSet(Type):
 
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
-    
+
     def items(self):
         return self.client.zrange(self.name, 0, -1, withscores=True)
 
@@ -448,7 +447,7 @@ class Queue(Type):
         """
         if not block:
             return self.get_nowait()
-        item = self._bpop(self.name, timeout=timeout)
+        item = self._bpop([self.name], timeout=timeout)
         if item is not None:
             return item
         raise Empty
@@ -488,179 +487,180 @@ class LifoQueue(Queue):
 class Int(Type):
     """In order to mimic an int, we reimplement all its methods with
     all values accessing the backing store.
-    
+
     These flip-flopping definitions are a 'convenient' way to mix Ints
     with types that are not int (including itself).
-    
+
     I am not at all convinced this was worth it.
     """
     def __add__(self, other):
         return type(other).__radd__(other, self.__int__())
-    
+
     def __sub__(self, other):
         return type(other).__rsub__(other, self.__int__())
-    
+
     def __mul__(self, other):
         return type(other).__rmul__(other, self.__int__())
-    
+
     def __div__(self, other):
         return type(other).__rdiv__(other, self.__int__())
-    
+
     def __truediv__(self, other):
         return type(other).__rtruediv__(other, self.__int__())
-    
+
     def __floordiv__(self, other):
         return type(other).__rfloordiv__(other, self.__int__())
-    
+
     def __mod__(self, other):
         return type(other).__rmod__(other, self.__int__())
-    
+
     def __divmod__(self, other):
         return type(other).__rdivmod__(other, self.__int__())
-    
+
     def __pow__(self, other):
         return type(other).__rpow__(other, self.__int__())
-    
+
     def __lshift__(self, other):
         return type(other).__rlshift__(other, self.__int__())
-    
+
     def __rshift__(self, other):
         return type(other).__rrshift__(other, self.__int__())
-    
+
     def __and__(self, other):
         return type(other).__rand__(other, self.__int__())
-    
+
     def __or__(self, other):
         return type(other).__ror__(other, self.__int__())
-    
+
     def __xor__(self, other):
         return type(other).__rxor__(other, self.__int__())
-    
+
     def __radd__(self, other):
         return type(other).__add__(other, self.__int__())
-    
+
     def __rsub__(self, other):
         return type(other).__sub__(other, self.__int__())
-    
+
     def __rmul__(self, other):
         return type(other).__mul__(other, self.__int__())
-    
+
     def __rdiv__(self, other):
         return type(other).__div__(other, self.__int__())
-    
+
     def __rtruediv__(self, other):
         return type(other).__truediv__(other, self.__int__())
-    
+
     def __rfloordiv__(self, other):
         return type(other).__floordiv__(other, self.__int__())
-    
+
     def __rmod__(self, other):
         return type(other).__mod__(other, self.__int__())
-    
+
     def __rdivmod__(self, other):
         return type(other).__divmod__(other, self.__int__())
-    
+
     def __rpow__(self, other):
         return type(other).__pow__(other, self.__int__())
-    
+
     def __rlshift__(self, other):
         return type(other).__lshift__(other, self.__int__())
-    
+
     def __rrshift__(self, other):
         return type(other).__shift__(other, self.__int__())
-    
+
     def __rand__(self, other):
         return type(other).__and__(other, self.__int__())
-    
+
     def __ror__(self, other):
         return type(other).__or__(other, self.__int__())
-    
+
     def __rxor__(self, other):
         return type(other).__xor__(other, self.__int__())
-    
+
     def __iadd__(self, other):
         self.client.incr(self.name, other)
         return self
-    
+
     def __isub__(self, other):
         self.client.decr(self.name, other)
         return self
-    
+
     def __imul__(self, other):
         self.client.set(self.name, int.__mul__(self.__int__(), other))
         return self
-    
+
     def __idiv__(self, other):
         self.client.set(self.name, int.__div__(self.__int__(), other))
         return self
-    
+
     def __itruediv__(self, other):
         self.client.set(self.name, int.__truediv__(self.__int__(), other))
         return self
-    
+
     def __ifloordiv__(self, other):
         self.client.set(self.name, int.__floordiv__(self.__int__(), other))
         return self
-    
+
     def __imod__(self, other):
         self.client.set(self.name, int.__mod__(self.__int__(), other))
         return self
-    
+
     def __ipow__(self, other):
         self.client.set(self.name, int.__pow__(self.__int__(), other))
         return self
-    
+
     def __iand__(self, other):
         self.client.set(self.name, int.__and__(self.__int__(), other))
         return self
-    
+
     def __ior__(self, other):
         self.client.set(self.name, int.__or__(self.__int__(), other))
         return self
-    
+
     def __ixor__(self, other):
         self.client.set(self.name, int.__xor__(self.__int__(), other))
         return self
-    
+
     def __ilshift__(self, other):
         self.client.set(self.name, int.__lshift__(self.__int__(), other))
         return self
-    
+
     def __irshift__(self, other):
         self.client.set(self.name, int.__rshift__(self.__int__(), other))
         return self
-    
+
     def __neg__(self):
         return int.__neg__(self.__int__())
-    
+
     def __pos__(self):
         return int.__pos__(self.__int__())
-    
+
     def __abs__(self):
         return int.__abs__(self.__int__())
-    
+
     def __invert__(self):
         return int.__invert__(self.__int__())
-    
+
     def __long__(self):
         return int.__long__(self.__int__())
-    
+
     def __float__(self):
         return int.__float__(self.__int__())
-    
+
     def __complex__(self):
         return int.__complex__(self.__int__())
-    
+
     def __int__(self):
         return int(self.client.get(self.name))
-    
+
     def __repr__(self):
         return repr(int(self))
-    
+
 
 def is_zsettable(s):
     """quick check that all values in a dict are reals"""
     return all(map(lambda x: isinstance(x, (int, float, long)), s.values()))
+
 
 class ZSet(object):
     """The simplest local implementation to Redis's Sorted Set imaginable.
@@ -670,55 +670,55 @@ class ZSet(object):
         if not is_zsettable(initial):
             raise ValueError(initial)
         self._dict = initial
-    
+
     def items(self):
         return sorted(self._dict.items(), key=lambda x: (x[1], x[0]))
-    
+
     def __getitem__(self, s):
         return self._as_set()[s]
-    
+
     def __len__(self):
         """``x.__len__() <==> len(x)``"""
         return len(self._dict)
-    
+
     def __iter__(self):
         """``x.__iter__() <==> iter(x)``"""
         return iter(self._as_set())
-    
+
     def __repr__(self):
         """``x.__repr__() <==> repr(x)``"""
         return repr(self._as_set())
-    
+
     def add(self, member, score):
         """Add the specified member to the sorted set, or update the score
         if it already exist."""
         self._dict[member] = score
-    
+
     def remove(self, member):
         """Remove member."""
         del self._dict[member]
-    
+
     def discard(self, member):
         if member in self._dict:
             del self._dict[member]
-    
+
     def increment(self, member, amount=1):
         """Increment the score of ``member`` by ``amount``."""
         self._dict[member] += amount
         return self._dict[member]
-    
+
     def rank(self, member):
         """Rank the set with scores being ordered from low to high."""
         return self._as_set().index(member)
-    
+
     def revrank(self, member):
         """Rank the set with scores being ordered from high to low."""
         return self.__len__() - self.rank(member) - 1
-    
+
     def score(self, member):
         """Return the score associated with the specified member."""
         return self._dict[member]
-    
+
     def range_by_score(self, min, max):
         """Return all the elements with score >= min and score <= max
         (a range query) from the sorted set."""
@@ -727,7 +727,6 @@ class ZSet(object):
         start = bisect.bisect_left(keys, min)
         end = bisect.bisect_right(keys, max, start)
         return self._as_set()[start:end]
-    
+
     def _as_set(self):
         return map(lambda x: x[0], self.items())
-    
