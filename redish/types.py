@@ -163,9 +163,14 @@ class Set(Type):
         """Return the union of sets as a new set.
 
         (i.e. all elements that are in either set.)
+        
+        Operates on either redish.types.Set or __builtins__.set.
 
         """
-        return self.client.sunion([self.name, other.name])
+        if isinstance(other, self.__class__):
+            return self.client.sunion([self.name, other.name])
+        else:
+            return self._as_set().union(other)
 
     def update(self, other):
         """Update this set with the union of itself and others."""
@@ -178,21 +183,34 @@ class Set(Type):
         """Return the intersection of two sets as a new set.
 
         (i.e. all elements that are in both sets.)
+        
+        Operates on either redish.types.Set or __builtins__.set.
 
         """
-        return self.client.sinter([self.name, other.name])
+        if isinstance(other, self.__class__):
+            return self.client.sinter([self.name, other.name])
+        else:
+            return self._as_set().intersection(other)
 
     def intersection_update(self, other):
         """Update the set with the intersection of itself and another."""
         return self.client.sinterstore(self.name, [self.name, other.name])
+        
 
     def difference(self, *others):
         """Return the difference of two or more sets as a new :class:`set`.
 
         (i.e. all elements that are in this set but not the others.)
+        
+        Operates on either redish.types.Set or __builtins__.set.
 
         """
-        return self.client.sdiff([self.name] + [other.name for other in others])
+        if all([isinstance(a, self.__class__) for a in others]):
+            return self.client.sdiff([self.name] + [other.name for other in others])
+        else:
+            othersets = filter(lambda x: isinstance(x, set), others)
+            otherTypes = filter(lambda x: isinstance(x, self.__class__), others)
+            return self.client.sdiff([self.name] + [other.name for other in otherTypes]).difference(*othersets)
 
     def difference_update(self, other):
         """Remove all elements of another set from this set."""
