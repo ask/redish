@@ -495,6 +495,46 @@ score)`` tuples::
     >>> z.range_by_score(min=0.3, max=0.6)
     ['bar', 'xuzzy']
 
+redish.proxy
+============
+
+The proxy submodule offers a different view on the redis datastore: 
+it exposes the strings, integers, lists, hashes, sets and sorted sets within
+the datastore transparently, as if they were native Python objects accessed 
+by key on the proxy object. For example::
+
+    >>> from redish import proxy
+    >>> r = proxy.Proxy()
+    
+    >>> r['mydict']
+    {'father': 'Frank Costanza', 'name': 'George Louis Costanza', 'mother': 'Estelle Costanza'}
+    >>> r['mydict']['name']
+    'George Louis Costanza'
+    >>> r['mydict']['name'] = "Georgie"
+    >>> r['mydict']['name']
+    'Georgie'
+    
+    >>> ss = r['myset']
+    >>> 'George' in ss
+    True
+    >>> 'Ringo' in ss
+    False
+    
+    >>> r['mycounter'] = 1
+    >>> cc = r['mycounter']
+    >>> cc += 1
+    >>> cc += 1
+    >>> r.get('mycounter')
+    '3'
+    >>> type(cc)
+    <class 'redish.types.Int'>
+    
+    >>> r['newlist'] = []
+    >>> r['newlist'].extend([1,2])
+    >>> len(r['newlist'])
+    2
+
+For more information, see the documentation.
 
 Installation
 ============
