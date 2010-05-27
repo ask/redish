@@ -24,6 +24,13 @@ TYPE_MAP = {
     "hash":   types.Dict,
 }
 
+REV_TYPE_MAP = {
+    list:       types.List,
+    set:        types.Set,
+    dict:       types.Dict,
+    types.ZSet: types.SortedSet,
+}
+
 def int_or_str(thing, key, client):
     try:
         int(thing)
@@ -36,12 +43,32 @@ class Proxy(Redis):
     In those cases, transparently returns an object that mimics its 
     associated Python type or passes assignments to the backing store."""
     
+    def __init__(self, **kwargs):
+        """
+        The `miss` argument accepts a function of one argument to which 
+        it passes a key, if the key is unknown in the datastore. By default
+        it returns a "None". Another possibility for more strict checking 
+        is passing in a KeyError.
+        """
+        try:
+            self.miss = kwargs.pop('miss')
+        except KeyError:
+            self.miss = lambda x: None
+        self.empties = {}
+        super(Proxy, self).__init__(**kwargs)
+    
     def __getitem__(self, key):
         """Return a proxy type according to the native redis type 
         associated with the key."""
         typ = self.type(key)
         if typ == 'none':
-            raise KeyError(key)
+            if key in self.empties:
+                return self.empties[key]
+            result = self.miss(key)
+            if isinstance(result, Exception):
+                raise result
+            else:
+                return result
         elif typ == 'string':
             return int_or_str(self.get(key), key, self)
         else:
@@ -55,6 +82,10 @@ class Proxy(Redis):
         elif isinstance(value, basestring):
             self.set(key, encode(value, "UTF-8"))
             return
+        if not value and value != None:
+            self.empties[key] = REV_TYPE_MAP[type(value)](key, self)
+        elif value and key in self.empties:
+            self.empties.pop(key)
         pline = self.pipeline()
         if self.exists(key):
             pline = pline.delete(key)
