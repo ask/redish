@@ -106,5 +106,9 @@ class Proxy(Redis):
         pline.execute()
     
     def __contains__(self, key):
+        """
+        We check for existence within the *proxy object*, and so we
+        must look in both the backing store and the object's "empties."
+        """
         return self.exists(key) or key in self.empties
     
