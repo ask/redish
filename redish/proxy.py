@@ -38,6 +38,9 @@ def int_or_str(thing, key, client):
     except (TypeError, ValueError):
         return decode(thing, "UTF-8")
 
+class Glob(str):
+    pass
+
 class Proxy(Redis):
     """Acts as the Redis object except with basic item access or assignment.
     In those cases, transparently returns an object that mimics its 
@@ -55,6 +58,8 @@ class Proxy(Redis):
     def __getitem__(self, key):
         """Return a proxy type according to the native redis type 
         associated with the key."""
+        if isinstance(key, Glob):
+            return self.multikey(key)
         typ = self.type(key)
         if typ == 'string':
             # because strings can be empty, check before "empties"
@@ -108,8 +113,17 @@ class Proxy(Redis):
         """
         return self.exists(key) or key in self.empties
     
-    def __delitem__(self, key):
-        if key in self.empties:
-            del self.empties[key]
-        self.delete(key)
+    def __delitem__(self, k):
+        if isinstance(k, Glob):
+            keys = self.keys(k)
+        else:
+            keys = [k]
+        for key in keys:
+            if key in self.empties:
+                del self.empties[key]
+        self.delete(*keys)
+    
+    def multikey(self, pattern):
+        for p in self.keys(pattern):
+            yield self[p]
     
