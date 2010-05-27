@@ -64,9 +64,12 @@ class Proxy(Redis):
         """Return a proxy type according to the native redis type 
         associated with the key."""
         typ = self.type(key)
-        if typ == 'none':
-            if key in self.empties:
+        if key in self.empties:
+            if typ == 'none':
                 return self.empties[key]
+            else:
+                self.empties.pop(key)
+        if typ == 'none':
             result = self.miss(key)
             if isinstance(result, Exception):
                 raise result
