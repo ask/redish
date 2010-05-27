@@ -56,6 +56,9 @@ class Proxy(Redis):
         """Return a proxy type according to the native redis type 
         associated with the key."""
         typ = self.type(key)
+        if typ == 'string':
+            # because strings can be empty, check before "empties"
+            return int_or_str(self.get(key), key, self)
         if key in self.empties:
             if typ == 'none':
                 return self.empties[key]
@@ -63,23 +66,25 @@ class Proxy(Redis):
                 self.empties.pop(key)
         if typ == 'none':
             raise KeyError(key)
-        elif typ == 'string':
-            return int_or_str(self.get(key), key, self)
         else:
             return TYPE_MAP[typ](key, self)
     
     def __setitem__(self, key, value):
         """Copy the contents of the value into the redis store."""
+        if key in self.empties:
+            del self.empties[key]
         if isinstance(value, (int, types.Int)):
             self.set(key, int(value))
             return
         elif isinstance(value, basestring):
             self.set(key, encode(value, "UTF-8"))
             return
-        if not value and value != None:
-            self.empties[key] = REV_TYPE_MAP[type(value)](key, self)
-        elif value and key in self.empties:
-            self.empties.pop(key)
+        if not value:
+            if self.exists(key):
+                self.delete(key)
+            if value != None:
+                self.empties[key] = REV_TYPE_MAP[type(value)](key, self)
+            return
         pline = self.pipeline()
         if self.exists(key):
             pline = pline.delete(key)
@@ -102,4 +107,9 @@ class Proxy(Redis):
         must look in both the backing store and the object's "empties."
         """
         return self.exists(key) or key in self.empties
+    
+    def __delitem__(self, key):
+        if key in self.empties:
+            del self.empties[key]
+        self.delete(key)
     
