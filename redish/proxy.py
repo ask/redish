@@ -48,7 +48,10 @@ class Proxy(Redis):
         The `miss` argument accepts a function of one argument to which 
         it passes a key, if the key is unknown in the datastore. By default
         it returns a "None". Another possibility for more strict checking 
-        is passing in a KeyError.
+        is passing in a KeyError. If a user attempts to initialize a redis 
+        key with an empty container, that container is kept in the (local
+        threading) proxy object so that subsequent accesses keep the 
+        right type without throwing KeyErrors.
         """
         try:
             self.miss = kwargs.pop('miss')
@@ -101,4 +104,7 @@ class Proxy(Redis):
             for k,v in value.items():
                 pline = pline.zadd(key, k, v)
         pline.execute()
+    
+    def __contains__(self, key):
+        return self.exists(key) or key in self.empties
     
