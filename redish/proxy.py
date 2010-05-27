@@ -43,22 +43,14 @@ class Proxy(Redis):
     In those cases, transparently returns an object that mimics its 
     associated Python type or passes assignments to the backing store."""
     
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
-        The `miss` argument accepts a function of one argument to which 
-        it passes a key, if the key is unknown in the datastore. By default
-        it returns a "None". Another possibility for more strict checking 
-        is passing in a KeyError. If a user attempts to initialize a redis 
-        key with an empty container, that container is kept in the (local
-        threading) proxy object so that subsequent accesses keep the 
-        right type without throwing KeyErrors.
+        If a user attempts to initialize a redis key with an empty container, 
+        that container is kept in the (local thread's) proxy object so that 
+        subsequent accesses keep the right type without throwing KeyErrors.
         """
-        try:
-            self.miss = kwargs.pop('miss')
-        except KeyError:
-            self.miss = lambda x: None
         self.empties = {}
-        super(Proxy, self).__init__(**kwargs)
+        super(Proxy, self).__init__(*args, **kwargs)
     
     def __getitem__(self, key):
         """Return a proxy type according to the native redis type 
@@ -70,11 +62,7 @@ class Proxy(Redis):
             else:
                 self.empties.pop(key)
         if typ == 'none':
-            result = self.miss(key)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                return result
+            raise KeyError(key)
         elif typ == 'string':
             return int_or_str(self.get(key), key, self)
         else:
