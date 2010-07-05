@@ -1,5 +1,6 @@
-from Queue import Empty, Full
 import bisect
+
+from Queue import Empty, Full
 
 from redis.exceptions import ResponseError
 from redish.utils import mkey
@@ -60,6 +61,8 @@ class List(Type):
 
     def _as_list(self):
         return self.client.lrange(self.name, 0, -1)
+
+    copy = _as_list
 
     def append(self, value):
         """Add ``value`` to the end of the list."""
@@ -131,6 +134,8 @@ class Set(Type):
     def _as_set(self):
         return self.client.smembers(self.name)
 
+    copy = _as_set
+
     def add(self, member):
         """Add element to set.
 
@@ -164,8 +169,13 @@ class Set(Type):
 
         (i.e. all elements that are in either set.)
 
+        Operates on either redish.types.Set or __builtins__.set.
+
         """
-        return self.client.sunion([self.name, other.name])
+        if isinstance(other, self.__class__):
+            return self.client.sunion([self.name, other.name])
+        else:
+            return self._as_set().union(other)
 
     def update(self, other):
         """Update this set with the union of itself and others."""
@@ -179,8 +189,13 @@ class Set(Type):
 
         (i.e. all elements that are in both sets.)
 
+        Operates on either redish.types.Set or __builtins__.set.
+
         """
-        return self.client.sinter([self.name, other.name])
+        if isinstance(other, self.__class__):
+            return self.client.sinter([self.name, other.name])
+        else:
+            return self._as_set().intersection(other)
 
     def intersection_update(self, other):
         """Update the set with the intersection of itself and another."""
@@ -191,8 +206,15 @@ class Set(Type):
 
         (i.e. all elements that are in this set but not the others.)
 
+        Operates on either redish.types.Set or __builtins__.set.
+
         """
-        return self.client.sdiff([self.name] + [other.name for other in others])
+        if all([isinstance(a, self.__class__) for a in others]):
+            return self.client.sdiff([self.name] + [other.name for other in others])
+        else:
+            othersets = filter(lambda x: isinstance(x, set), others)
+            otherTypes = filter(lambda x: isinstance(x, self.__class__), others)
+            return self.client.sdiff([self.name] + [other.name for other in otherTypes]).difference(*othersets)
 
     def difference_update(self, other):
         """Remove all elements of another set from this set."""
@@ -320,11 +342,7 @@ class SortedSet(Type):
     def keysview(self, start=0, end=-1, desc=False):
         return self._itemsview(self, start, end, desc, withscores=False)
 
-
-
-
-
-
+    copy = _as_set
 
 
 class Dict(Type):
@@ -447,6 +465,8 @@ class Dict(Type):
 
     def _as_dict(self):
         return self.client.hgetall(self.name)
+
+    copy = _as_dict
 
 
 class Queue(Type):
@@ -701,6 +721,7 @@ class Int(Type):
     def __repr__(self):
         return repr(int(self))
 
+    copy = __int__
 
 def is_zsettable(s):
     """quick check that all values in a dict are reals"""

@@ -495,6 +495,67 @@ score)`` tuples::
     >>> z.range_by_score(min=0.3, max=0.6)
     ['bar', 'xuzzy']
 
+redish.proxy
+============
+
+The proxy submodule offers a different view on the redis datastore: it exposes
+the strings, integers, lists, hashes, sets and sorted sets within the
+datastore transparently, as if they were native Python objects accessed by key
+on the proxy object. They do not store serialized objects as with the rest of
+redish. For example::
+
+    >>> from redish import proxy
+    >>> r = proxy.Proxy()
+
+Key access yields an object that acts like the Python equivalent of the
+underlying Redis structure. That structure can be read and modified as if it
+is native, local object. Here, that object acts like a dict::
+
+    >>> r['mydict']
+    {'father': 'Frank Costanza', 'name': 'George Louis Costanza', 'mother': 'Estelle Costanza'}
+    >>> r['mydict']['name']
+    'George Louis Costanza'
+    >>> r['mydict']['name'] = "Georgie"
+    >>> r['mydict']['name']
+    'Georgie'
+
+Sometimes, it may be convenient to assign a variable to the proxy object, and
+use that in subsequent operations::
+
+    >>> ss = r['myset']
+    >>> 'George' in ss
+    True
+    >>> 'Ringo' in ss
+    False
+
+The Proxy object is a subclass of a normal redis.Client object, and so
+supports the same methods (other than `__getitem__`, `__setitem__`,
+`__contains__`, and `__delitem__`). The object that the proxy object returns
+is an instance of one of the classes from redish.types (with the exception of
+unicode: those are simply serialized/unserialized from the underlying redis
+data store as UTF-8).
+::
+
+    >>> r['mycounter'] = 1
+    >>> cc = r['mycounter']
+    >>> cc += 1
+    >>> cc += 1
+    >>> r.get('mycounter')
+    '3'
+    >>> type(cc)
+    <class 'redish.types.Int'>
+
+Since redis does not support empty sets, lists, or hashes, the proxy object
+will (thread-)locally 'remember' keys that are explicitly set as empty types.
+It does not currently remember container types that have been emptied as a
+product of operations on the underlying store::
+
+    >>> r['newlist'] = []
+    >>> r['newlist'].extend([1,2])
+    >>> len(r['newlist'])
+    2
+
+For more information, see the redish.proxy documentation.
 
 Installation
 ============
