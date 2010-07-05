@@ -207,6 +207,36 @@ class SortedSet(Type):
 
     """
 
+    class _itemsview(object):
+
+        def __init__(self, zset, start=0, end=-1, desc=False,
+                withscores=False):
+            self.zset = zset
+            self.start = start
+            self.end = end
+            self.desc = desc
+            self.withscores = withscores
+
+        def _items(self, start, end, desc, withscores):
+            return self.zset.items(start, end, desc=desc,
+                                   withscores=withscores)
+
+        def __iter__(self):
+            return iter(self._items(self.start, self.end, self.desc,
+                                    self.withscores))
+
+        def __reversed__(self):
+            return self._items(self.start, self.end, True, self.withscores)
+
+        def __getitem__(self, s):
+            if isinstance(s, slice):
+                i = s.start or 0
+                j = s.stop or -1
+                j = j - 1
+                return self._items(i, j, False, self.withscores)
+            else:
+                return self._items(s, s, False, self.withscores)[0]
+
     def __init__(self, name, client, initial=None):
         super(SortedSet, self).__init__(name, client)
         if initial:
@@ -267,10 +297,11 @@ class SortedSet(Type):
         """Return the score associated with the specified member."""
         return self.client.zscore(self.name, member)
 
-    def range_by_score(self, min, max):
+    def range_by_score(self, min, max, num=None, withscores=False):
         """Return all the elements with score >= min and score <= max
         (a range query) from the sorted set."""
-        return self.client.zrangebyscore(self.name, min, max)
+        return self.client.zrangebyscore(self.name, min, max, num=num,
+                                         withscores=withscores)
 
     def update(self, iterable):
         for member, score in iterable:
@@ -279,8 +310,21 @@ class SortedSet(Type):
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
 
-    def items(self):
-        return self.client.zrange(self.name, 0, -1, withscores=True)
+    def items(self, start=0, end=-1, desc=False, withscores=False):
+        return self.client.zrange(self.name, start, end,
+                                  desc=desc, withscores=withscores)
+
+    def itemsview(self, start=0, end=-1, desc=False):
+        return self._itemsview(self, start, end, desc, withscores=True)
+
+    def keysview(self, start=0, end=-1, desc=False):
+        return self._itemsview(self, start, end, desc, withscores=False)
+
+
+
+
+
+
 
 
 class Dict(Type):

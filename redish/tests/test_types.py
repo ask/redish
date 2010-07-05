@@ -310,6 +310,34 @@ class test_SortedSet(ClientTestCase):
         self.assertListEqual(z.range_by_score(0.3, 1.0), [
                                 "baz", "zaz", "foo"])
 
+    def test_itemsview(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3),
+                 ("bam", 1.2), ("xuzzy", 0.2), ("zaz", 0.4))
+        z = self.client.SortedSet("test:SortedSet:itemsview", data)
+        view = z.itemsview()
+        self.assertTupleEqual(tuple(view), (
+            ("bar", 0.1),
+            ("xuzzy", 0.2),
+            ("baz", 0.3),
+            ("zaz", 0.4),
+            ("foo", 0.9),
+            ("bam", 1.2)))
+
+    def test_keysview(self):
+        data = (("foo", 0.9), ("bar", 0.1), ("baz", 0.3),
+                 ("bam", 1.2), ("xuzzy", 0.2), ("zaz", 0.4))
+        z = self.client.SortedSet("test:SortedSet:keysview", data)
+        self.assertListEqual(list(z.keysview()),
+                ["bar", "xuzzy", "baz", "zaz", "foo", "bam"])
+        self.assertListEqual(list(reversed(z.keysview())),
+                ["bam", "foo", "zaz", "baz", "xuzzy", "bar"])
+        self.assertListEqual(z.keysview()[0:3],
+                ["bar", "xuzzy", "baz"])
+
+        self.assertEqual(z.keysview()[3], "zaz")
+
+        self.assertRaises(IndexError, z.keysview().__getitem__, 100)
+
 
 class test_Dict(ClientTestCase):
 
