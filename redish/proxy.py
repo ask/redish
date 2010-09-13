@@ -88,10 +88,6 @@ class Proxy(Redis):
     @keyspaced
     def __setitem__(self, key, value):
         """Copy the contents of the value into the redis store."""
-        if isinstance(key, tuple):
-            keyspace = key[0]
-            keyargs = tuple(key[1:])
-            key = self.keyspaces[keyspace] % keyargs
         if key in self.empties:
             del self.empties[key]
         if isinstance(value, (int, types.Int)):
@@ -146,10 +142,50 @@ class Proxy(Redis):
             yield self[p]
     
     def register_keyspace(self, shortcut, formatstring):
+        """
+        Define a keyspace by mapping a label to a formatstring.
+        
+        The function returns the name of the shortcut to facilitate
+        symbolic access with this pattern::
+        
+            VALUE = proxyobject.register_keyspace('val', "user:%d:name")
+            proxyobject[VALUE, 1001] = "Fred"
+            proxyobject['val', 1001]
+        """
         self.keyspaces[shortcut] = formatstring
         return shortcut
     
+    def keyspace(self, keyspace):
+        """
+        Convenient, consistent access to a sub-set of all keys.
+        """
+        return KeyspacedProxy(self, self.keyspaces[keyspace])
+    
     @keyspaced
-    def echo_key(self, key):
-        print key
+    def actual_key(self, key):
+        """
+        For debugging.
+        """
+        return key
+    
+
+class KeyspacedProxy(Proxy):
+    """
+    The best way of describing this is that it simulates a partial using the keyspace.
+    """
+    def __init__(self, proxy, transform):
+        self.proxy = proxy
+        self.transform = transform
+    
+    def __getitem__(self, key):
+        return self.proxy.__getitem__(self.transform % key)
+    
+    def __setitem__(self, key, value):
+        return self.proxy.__setitem__(self.transform % key, value)
+    
+    def __contains__(self, key):
+        return self.proxy.__contains__(self.transform % key)
+    
+    def __delitem__(self, key):
+        return self.proxy.__delitem__(self.transform % key)
     
