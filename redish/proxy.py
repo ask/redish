@@ -53,8 +53,19 @@ class Proxy(Redis):
         subsequent accesses keep the right type without throwing KeyErrors.
         """
         self.empties = {}
+        self.keyspaces = {}
         super(Proxy, self).__init__(*args, **kwargs)
     
+    def keyspaced(f):
+        def preprocessed(self, key, *argv):
+            if isinstance(key, tuple):
+                keyspace = key[0]
+                keyargs = tuple(key[1:])
+                key = self.keyspaces[keyspace] % keyargs
+            return f(self, key, *argv)
+        return preprocessed
+    
+    @keyspaced
     def __getitem__(self, key):
         """Return a proxy type according to the native redis type 
         associated with the key."""
@@ -74,8 +85,13 @@ class Proxy(Redis):
         else:
             return TYPE_MAP[typ](key, self)
     
+    @keyspaced
     def __setitem__(self, key, value):
         """Copy the contents of the value into the redis store."""
+        if isinstance(key, tuple):
+            keyspace = key[0]
+            keyargs = tuple(key[1:])
+            key = self.keyspaces[keyspace] % keyargs
         if key in self.empties:
             del self.empties[key]
         if isinstance(value, (int, types.Int)):
@@ -106,6 +122,7 @@ class Proxy(Redis):
                 pline = pline.zadd(key, k, v)
         pline.execute()
     
+    @keyspaced
     def __contains__(self, key):
         """
         We check for existence within the *proxy object*, and so we
@@ -113,6 +130,7 @@ class Proxy(Redis):
         """
         return self.exists(key) or key in self.empties
     
+    @keyspaced
     def __delitem__(self, k):
         if isinstance(k, Glob):
             keys = self.keys(k)
@@ -126,4 +144,12 @@ class Proxy(Redis):
     def multikey(self, pattern):
         for p in self.keys(pattern):
             yield self[p]
+    
+    def register_keyspace(self, shortcut, formatstring):
+        self.keyspaces[shortcut] = formatstring
+        return shortcut
+    
+    @keyspaced
+    def echo_key(self, key):
+        print key
     
