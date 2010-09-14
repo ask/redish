@@ -224,7 +224,21 @@ database, allowing you to treat the keyspace as a dict::
     >>> names[1]
     u'Bob'
 
-These features can be combined::
+Not only can you get ``keys`` that match a (glob-style) pattern, as in
+``redis.keys``(), but you can also get ``values`` and ``items``. When
+fed a keyspace label as an argument, the formatstring is converted to
+a glob-style pattern. When used with keyspaced proxies, no argument is
+needed, and the keyspace's formatstring is converted into a glob-style
+pattern. The following are thus equivalent::
+
+    >>> r.keys('person:*:name')
+    ['person:0001:name']
+    >>> r.keys('myspace')
+    ['person:0001:name']
+    >>> names.keys()
+    ['person:0001:name']
+
+All these features can be combined::
 
     >>> ZZ = x.register_keyspace('friends', '%(type)s:%(id)04d:friends')
     >>> friendstore = x.keyspace(ZZ)
@@ -238,6 +252,9 @@ These features can be combined::
     <Set: ['1', '204']>
     >>> x['pet:0204:friends'].intersection(friendstore[frank])
     set(['1'])
+    >>> friendstore.items()
+    [('person:0203:friends', <Set: ['1', '204']>),
+     ('pet:0204:friends', <Set: ['1', '202']>)]
 
 I have no idea at this point if these experimental features are
 useful, but they are small, and seem to make sense to me. Feedback is

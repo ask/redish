@@ -149,11 +149,20 @@ class Proxy(Redis):
                 del self._empties[key]
         self.delete(*keys)
     
-    def multikey(self, pattern):
+    def values(self, pattern):
         if pattern in self._keyspaces:
             pattern = FORMAT_SPEC.sub('*', self._keyspaces[pattern])
-        for p in self.keys(pattern):
-            yield self[p]
+        return [self[p] for p in super(Proxy, self).keys(pattern)]
+    
+    def keys(self, pattern):
+        if pattern in self._keyspaces:
+            pattern = FORMAT_SPEC.sub('*', self._keyspaces[pattern])
+        return super(Proxy, self).keys(pattern)
+    
+    def items(self, pattern):
+        if pattern in self._keyspaces:
+            pattern = FORMAT_SPEC.sub('*', self._keyspaces[pattern])
+        return [(p, self[p]) for p in super(Proxy, self).keys(pattern)]
     
     def register_keyspace(self, shortcut, formatstring):
         """
@@ -195,6 +204,7 @@ class KeyspacedProxy(Proxy):
     def __init__(self, proxy, transform):
         self.proxy = proxy
         self.transform = transform
+        self.globbed = FORMAT_SPEC.sub('*', transform)
     
     def __getitem__(self, key):
         return self.proxy.__getitem__(self.transform % key)
@@ -207,4 +217,13 @@ class KeyspacedProxy(Proxy):
     
     def __delitem__(self, key):
         return self.proxy.__delitem__(self.transform % key)
+    
+    def keys(self):
+        return self.proxy.keys(self.globbed)
+    
+    def values(self):
+        return self.proxy.values(self.globbed)
+    
+    def items(self):
+        return self.proxy.items(self.globbed)
     
