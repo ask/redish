@@ -52,6 +52,9 @@ class Proxy(Redis):
     
     def __init__(self, *args, **kwargs):
         """
+        This mostly defers to the main redis-py object, with the exception of 
+        keeping track of empty elements and keyspaces.
+        
         If a user attempts to initialize a redis key with an empty container, 
         that container is kept in the (local thread's) proxy object so that 
         subsequent accesses keep the right type without throwing KeyErrors.
@@ -70,6 +73,8 @@ class Proxy(Redis):
                     keyargs = tuple(key[1:])
                 key = self._keyspaces[keyspace] % keyargs
             return f(self, key, *argv)
+        preprocessed.__doc__ = f.__doc__
+        preprocessed.__name__ = f.__name__
         return preprocessed
     
     @keyspaced
@@ -158,8 +163,12 @@ class Proxy(Redis):
         symbolic access with this pattern::
         
             VALUE = proxyobject.register_keyspace('val', "user:%d:name")
+        
+        The following three statements are then all equivalent::
+        
             proxyobject[VALUE, 1001] = "Fred"
-            proxyobject['val', 1001]
+            proxyobject['val', 1001] = "Fred"
+            proxyobject['user:1001:name'] = "Fred"
         """
         self._keyspaces[shortcut] = formatstring
         return shortcut
@@ -180,7 +189,8 @@ class Proxy(Redis):
 
 class KeyspacedProxy(Proxy):
     """
-    The best way of describing this is that it simulates a partial using the keyspace.
+    The easiest way of describing this is that it simulates a partial on the 
+    mapping object by interpolating the keyspace. Clear?
     """
     def __init__(self, proxy, transform):
         self.proxy = proxy

@@ -212,7 +212,7 @@ of the keyspaces, so the following is equivalent to the above::
     >>> x['myspace', 1]
     u'Bob'
 
-One can debug the keyspaces by feeding a tuple to `actual_key`::
+One can debug the keyspaces by feeding a tuple to ``actual_key``::
 
     >>> x.actual_key((UNAME, 202))
     'person:0202:name'
