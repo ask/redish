@@ -24,7 +24,7 @@ objects when accessing by key::
 
 Deletion and invalid keys work as expected::
 
-    >>> del(x["foo"])
+    >>> del x["foo"]
     >>> x["foo"]
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
@@ -183,3 +183,62 @@ A Proxy object retains all the normal methods from Redis object::
     ['z', 'dictionary', 'Liszt', 'set', 'game']
     >>> x.bgsave()
     True
+
+Keyspaces in proxy objects
+--------------------------
+
+The fact that Redis offers a flat keyspace in each of its databases is
+a great benefit: it does not presuppose any structure for the keys,
+and access is fast and unencumbered. However, users are likely to want
+some structure in using keys, and the Keyspaces feature is a first
+attempt at making key name patterns accessible to users.
+
+At the heart, a "keyspace" is a formatstring with an associated label.
+Access is achieved by accessing elements in the proxy with a tuple
+argument, with the label as the first element of the tuple and the
+following elements used as inputs to the formatstring::
+
+    >>> x.register_keyspace('myspace', "person:%04d:name")
+    'myspace'
+    >>> x['myspace', 1] = "Bob"
+    >>> x['person:0001:name']
+    u'Bob'
+
+The label string is returned to facilitate structured and symbolic use
+of the keyspaces, so the following is equivalent to the above::
+
+    >>> UNAME = x.register_keyspace('myspace', "person:%04d:name")
+    >>> x[UNAME, 1] = "Bob"
+    >>> x['myspace', 1]
+    u'Bob'
+
+One can debug the keyspaces by feeding a tuple to `actual_key`::
+
+    >>> x.actual_key((UNAME, 202))
+    'person:0202:name'
+
+One can also obtain a keyspace as a subset of all the keys in the
+database, allowing you to treat the keyspace as a dict::
+
+    >>> names = x.keyspace(UNAME)
+    >>> names[1]
+    u'Bob'
+
+These features can be combined::
+
+    >>> ZZ = x.register_keyspace('friends', '%(type)s:%(id)04d:friends')
+    >>> friendstore = x.keyspace(ZZ)
+    >>> frank = {'type': 'person', 'id': 203, 
+    ...          'friends': set([204, 1]), 'name': 'Frank'}
+    >>> fido = {'type': 'pet', 'id': 204, 
+    ...          'name': 'Fido', 'friends': set([1, 202])}
+    >>> for o in [frank, fido]:
+    ...     friendstore[o] = o['friends']
+    >>> x['person:0203:friends']
+    <Set: ['1', '204']>
+    >>> x['pet:0204:friends'].intersection(friendstore[frank])
+    set(['1'])
+
+I have no idea at this point if these experimental features are
+useful, but they are small, and seem to make sense to me. Feedback is
+appreciated.

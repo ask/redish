@@ -14,6 +14,7 @@ server.
 (originally by Adam T. Lindsay)
 """
 from codecs import encode, decode
+import re
 from redis import Redis
 from redish import types
 
@@ -30,6 +31,9 @@ REV_TYPE_MAP = {
     dict:       types.Dict,
     types.ZSet: types.SortedSet,
 }
+
+# OMG, what have I done?
+FORMAT_SPEC = re.compile(r'%(\(\w+\))?[#0\- \+]?[0-9\*]*\.?[0-9\*]*[hlL]?[diouxXeXfXgGcrs]')
 
 def int_or_str(thing, key, client):
     try:
@@ -52,16 +56,19 @@ class Proxy(Redis):
         that container is kept in the (local thread's) proxy object so that 
         subsequent accesses keep the right type without throwing KeyErrors.
         """
-        self.empties = {}
-        self.keyspaces = {}
+        self._empties = {}
+        self._keyspaces = {}
         super(Proxy, self).__init__(*args, **kwargs)
     
     def keyspaced(f):
         def preprocessed(self, key, *argv):
             if isinstance(key, tuple):
                 keyspace = key[0]
-                keyargs = tuple(key[1:])
-                key = self.keyspaces[keyspace] % keyargs
+                if len(key) == 2:
+                    keyargs = key[1:][0]
+                else:
+                    keyargs = tuple(key[1:])
+                key = self._keyspaces[keyspace] % keyargs
             return f(self, key, *argv)
         return preprocessed
     
@@ -75,11 +82,11 @@ class Proxy(Redis):
         if typ == 'string':
             # because strings can be empty, check before "empties"
             return int_or_str(self.get(key), key, self)
-        if key in self.empties:
+        if key in self._empties:
             if typ == 'none':
-                return self.empties[key]
+                return self._empties[key]
             else:
-                self.empties.pop(key)
+                self._empties.pop(key)
         if typ == 'none':
             raise KeyError(key)
         else:
@@ -88,8 +95,8 @@ class Proxy(Redis):
     @keyspaced
     def __setitem__(self, key, value):
         """Copy the contents of the value into the redis store."""
-        if key in self.empties:
-            del self.empties[key]
+        if key in self._empties:
+            del self._empties[key]
         if isinstance(value, (int, types.Int)):
             self.set(key, int(value))
             return
@@ -100,7 +107,7 @@ class Proxy(Redis):
             if self.exists(key):
                 self.delete(key)
             if value != None:
-                self.empties[key] = REV_TYPE_MAP[type(value)](key, self)
+                self._empties[key] = REV_TYPE_MAP[type(value)](key, self)
             return
         pline = self.pipeline()
         if self.exists(key):
@@ -124,7 +131,7 @@ class Proxy(Redis):
         We check for existence within the *proxy object*, and so we
         must look in both the backing store and the object's "empties."
         """
-        return self.exists(key) or key in self.empties
+        return self.exists(key) or key in self._empties
     
     @keyspaced
     def __delitem__(self, k):
@@ -133,11 +140,13 @@ class Proxy(Redis):
         else:
             keys = [k]
         for key in keys:
-            if key in self.empties:
-                del self.empties[key]
+            if key in self._empties:
+                del self._empties[key]
         self.delete(*keys)
     
     def multikey(self, pattern):
+        if pattern in self._keyspaces:
+            pattern = FORMAT_SPEC.sub('*', self._keyspaces[pattern])
         for p in self.keys(pattern):
             yield self[p]
     
@@ -152,14 +161,14 @@ class Proxy(Redis):
             proxyobject[VALUE, 1001] = "Fred"
             proxyobject['val', 1001]
         """
-        self.keyspaces[shortcut] = formatstring
+        self._keyspaces[shortcut] = formatstring
         return shortcut
     
     def keyspace(self, keyspace):
         """
         Convenient, consistent access to a sub-set of all keys.
         """
-        return KeyspacedProxy(self, self.keyspaces[keyspace])
+        return KeyspacedProxy(self, self._keyspaces[keyspace])
     
     @keyspaced
     def actual_key(self, key):
