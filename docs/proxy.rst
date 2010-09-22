@@ -225,7 +225,7 @@ database, allowing you to treat the keyspace as a dict::
     u'Bob'
 
 Not only can you get ``keys`` that match a (glob-style) pattern, as in
-``redis.keys``(), but you can also get ``values`` and ``items``. When
+``redis.keys()``, but you can also get ``values`` and ``items``. When
 fed a keyspace label as an argument, the formatstring is converted to
 a glob-style pattern. When used with keyspaced proxies, no argument is
 needed, and the keyspace's formatstring is converted into a glob-style

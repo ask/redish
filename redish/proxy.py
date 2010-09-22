@@ -186,7 +186,10 @@ class Proxy(Redis):
         """
         Convenient, consistent access to a sub-set of all keys.
         """
-        return KeyspacedProxy(self, self._keyspaces[keyspace])
+        if FORMAT_SPEC.search(keyspace):
+            return KeyspacedProxy(self, keyspace)
+        else:
+            return KeyspacedProxy(self, self._keyspaces[keyspace])
     
     @keyspaced
     def actual_key(self, key):
