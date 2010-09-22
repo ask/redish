@@ -224,6 +224,13 @@ database, allowing you to treat the keyspace as a dict::
     >>> names[1]
     u'Bob'
 
+If you like, you can bypass labeling altogether and initialize a
+keyspace using a formatstring alone as a pattern::
+
+    >>> namez = x.keyspace("person:%04d:name")
+    >>> namez[1]
+    u'Bob'
+
 Not only can you get ``keys`` that match a (glob-style) pattern, as in
 ``redis.keys()``, but you can also get ``values`` and ``items``. When
 fed a keyspace label as an argument, the formatstring is converted to
@@ -242,12 +249,14 @@ All these features can be combined::
 
     >>> ZZ = x.register_keyspace('friends', '%(type)s:%(id)04d:friends')
     >>> friendstore = x.keyspace(ZZ)
+    >>> namestore = x.keyspace('%(type)s:%(id)04d:name')
     >>> frank = {'type': 'person', 'id': 203, 
     ...          'friends': set([204, 1]), 'name': 'Frank'}
     >>> fido = {'type': 'pet', 'id': 204, 
     ...          'name': 'Fido', 'friends': set([1, 202])}
     >>> for o in [frank, fido]:
     ...     friendstore[o] = o['friends']
+    ...     namestore[o] = o['name']
     >>> x['person:0203:friends']
     <Set: ['1', '204']>
     >>> x['pet:0204:friends'].intersection(friendstore[frank])
@@ -255,7 +264,9 @@ All these features can be combined::
     >>> friendstore.items()
     [('person:0203:friends', <Set: ['1', '204']>),
      ('pet:0204:friends', <Set: ['1', '202']>)]
+    >>> namestore[frank]
+    u'Frank'
 
-I have no idea at this point if these experimental features are
-useful, but they are small, and seem to make sense to me. Feedback is
-appreciated.
+I have no idea at this point if these experimental features are useful
+to others, but they are fairly minimal, independent, and make sense to
+me. Feedback is appreciated.
