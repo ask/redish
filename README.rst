@@ -555,6 +555,17 @@ product of operations on the underlying store::
     >>> len(r['newlist'])
     2
 
+Finally, you may structure key names into arbitrary "keyspaces" 
+denoted by format strings::
+
+    >>> name = r.keyspace['user:%04d:name']
+    >>> parents = r.keyspace['user:%04d:parents']
+    >>> property = r.keyspace['user:%04d:%s']
+    >>> name[1] = 'Jerry'
+    >>> property[1,'parents'] = ['Morty', 'Helen']
+    >>> parents.items()
+    ('user:0001:parents', ['Morty', 'Helen'])
+
 For more information, see the redish.proxy documentation.
 
 Installation
