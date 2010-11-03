@@ -57,7 +57,7 @@ class Model(dict):
         dict.__init__(self, self.prepare_fields(fields))
 
     def __reduce__(self):
-        return (_unpickle_model, (self.__class__, id, fields), None)
+        return (_unpickle_model, (self.__class__, self.id, dict(self)), None)
 
     def save(self):
         """Save this entry.
