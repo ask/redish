@@ -13,6 +13,9 @@ class ModelType(type):
         return super(ModelType, cls).__new__(cls, name, bases, attrs)
 
 
+def _unpickle_model(model, id, fields):
+    return model(id=id, **fields)
+
 
 class Model(dict):
     """A Model.
@@ -48,10 +51,13 @@ class Model(dict):
     name = None
     objects = None
 
-    def __init__(self, manager, id=None, **fields):
+    def __init__(self, manager=None, id=None, **fields):
         self.objects = manager
         self.id = id
         dict.__init__(self, self.prepare_fields(fields))
+
+    def __reduce__(self):
+        return (_unpickle_model, (self.__class__, id, fields), None)
 
     def save(self):
         """Save this entry.
