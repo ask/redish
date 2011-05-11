@@ -31,12 +31,12 @@ class Client(object):
     #serializer = anyjson
 
     def __init__(self, host=None, port=None, db=None,
-            serializer=None):
+            serializer=None, **kwargs):
         self.host = host or self.host
         self.port = port or self.port
         self.serializer = serializer or self.serializer
         self.db = db or self.db
-        self.api = _RedisClient(self.host, self.port, self.db)
+        self.api = _RedisClient(self.host, self.port, self.db, **kwargs)
 
     def id(self, name):
         """Return the next id for a name."""
